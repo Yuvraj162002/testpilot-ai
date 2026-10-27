@@ -14,6 +14,7 @@ Android APKs are supported over adb. Built solo for the AI Product Hackathon 202
 
 ```bash
 ./dev.sh                     # backend :8000 + frontend :5173, Ctrl+C stops both
+cd backend && .venv/bin/pytest   # tests; ai._tool_call is mocked, never call the real Claude in tests
 ```
 
 - App http://localhost:5173 · Swagger http://localhost:8000/docs · Demo shop http://localhost:8000/demo/

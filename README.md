@@ -26,6 +26,17 @@ It has 3 planted bugs (details in `backend/app/demo.py`):
 2. Mobile menu (390px viewport) never opens.
 3. Wrong password on Sign in shows no error message.
 
+## Tests
+
+```bash
+cd backend
+.venv/bin/pip install -r requirements-dev.txt   # pytest + httpx
+.venv/bin/pytest                                # ~1 s, Claude is mocked, no browser needed
+```
+
+Covers the evidence check (a `Passed` without text from the page becomes `Blocked`), input validation,
+bug reports (failed tests only), the answer API and the run history DB.
+
 ## What each part does
 
 | Folder / file | What it is |
