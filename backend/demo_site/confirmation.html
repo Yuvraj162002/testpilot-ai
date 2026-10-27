@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AcmeCart – Order confirmed</title>
+  <link rel="stylesheet" href="/demo/style.css">
+</head>
+<body>
+  <header></header>
+  <main>
+    <h1>Thank you for your order!</h1>
+    <div class="success" id="order"></div>
+  </main>
+  <script src="/demo/shop.js"></script>
+  <script>
+    document.getElementById('order').textContent =
+      'Order number: ' + new URLSearchParams(location.search).get('order')
+  </script>
+</body>
+</html>

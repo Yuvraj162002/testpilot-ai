@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AcmeCart – Checkout</title>
+  <link rel="stylesheet" href="/demo/style.css">
+</head>
+<body>
+  <header></header>
+  <main>
+    <h1>Checkout</h1>
+    <div class="card" id="summary"></div>
+    <div class="card" style="margin-top:16px">
+      <label for="code">Discount code</label>
+      <div class="row"><input id="code" placeholder="e.g. SAVE10"><button class="primary" id="apply">Apply</button></div>
+      <label for="email">Email</label><input id="email" type="email">
+      <label for="name">Full name</label><input id="name">
+      <label for="address">Address</label><input id="address">
+      <div id="message" role="alert"></div>
+      <button class="primary" id="place-order" style="margin-top:16px">Place order</button>
+    </div>
+  </main>
+  <script src="/demo/shop.js"></script>
+  <script>
+    let discount = null
+    function total() {
+      const sum = cart.get().reduce((s, i) => s + PRODUCTS.find(p => p.id === i.id).price * i.qty, 0)
+      return discount ? sum * 0.9 : sum
+    }
+    function renderSummary() {
+      const items = cart.get()
+      document.getElementById('summary').innerHTML = items.length
+        ? items.map(i => `<p>${PRODUCTS.find(p => p.id === i.id).name} × ${i.qty}</p>`).join('')
+          + (discount ? '<p>Discount SAVE10: −10%</p>' : '') + `<p><b>Total: $${total().toFixed(2)}</b></p>`
+        : '<p>Your cart is empty.</p>'
+    }
+    const show = (cls, text) => document.getElementById('message').innerHTML = `<div class="${cls}">${text}</div>`
+
+    document.getElementById('apply').onclick = () => {
+      if (document.getElementById('code').value.trim().toUpperCase() === 'SAVE10') { discount = 'SAVE10'; show('success', 'Discount applied') }
+      else show('error', 'Invalid discount code')
+      renderSummary()
+    }
+    document.getElementById('place-order').onclick = async () => {
+      const email = document.getElementById('email').value, name = document.getElementById('name').value
+      if (!email || !name || !document.getElementById('address').value) return show('error', 'Please fill in all fields')
+      if (!cart.get().length) return show('error', 'Your cart is empty')
+      const res = await fetch('/demo/api/orders', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, items: cart.get(), discount }),
+      })
+      if (!res.ok) { console.error('Order failed', res.status); return show('error', 'Something went wrong. Try again.') }
+      const order = await res.json()
+      cart.set([])
+      location.href = `/demo/confirmation.html?order=${order.order_id}`
+    }
+    renderSummary()
+  </script>
+</body>
+</html>
