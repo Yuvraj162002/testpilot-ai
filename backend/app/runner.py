@@ -109,8 +109,12 @@ def _run_case(browser, run: Run, result: TestResult, out: Path, cfg: settings.Se
                 # The verdict must be backed by the real page, not just the AI's word.
                 # Visible text + accessible names (icon-only buttons have a name but no text).
                 page_text = _norm(page.inner_text("body") + "\n" + snapshot(page))
-                missing = [e for e in args.get("evidence") or [] if _norm(e) not in page_text]
-                if result.status == "Passed" and missing:
+                evidence = [e for e in args.get("evidence") or [] if _norm(e)]  # blank text matches anything
+                missing = [e for e in evidence if _norm(e) not in page_text]
+                if result.status == "Passed" and not evidence:
+                    result.status = "Blocked"
+                    result.reason = "Needs review: AI said passed but quoted no evidence from the page."
+                elif result.status == "Passed" and missing:
                     result.status = "Blocked"
                     result.reason = f"Needs review: AI said passed but {missing} is not on the page."
                 break

@@ -245,8 +245,12 @@ def run_tests(run_id: int, evidence_dir: Path) -> None:
                 if name == "finish":
                     result.status, result.reason = args["status"], args["reason"]
                     screen_text = ai_norm(" ".join(e.label for e in elements))
-                    missing = [e for e in args.get("evidence") or [] if ai_norm(e) not in screen_text]
-                    if result.status == "Passed" and missing:
+                    evidence = [e for e in args.get("evidence") or [] if ai_norm(e)]  # blank text matches anything
+                    missing = [e for e in evidence if ai_norm(e) not in screen_text]
+                    if result.status == "Passed" and not evidence:
+                        result.status = "Blocked"
+                        result.reason = "Needs review: AI said passed but quoted no evidence from the screen."
+                    elif result.status == "Passed" and missing:
                         result.status = "Blocked"
                         result.reason = f"Needs review: AI said passed but {missing} is not on the screen."
                     break

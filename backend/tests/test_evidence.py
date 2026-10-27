@@ -134,11 +134,17 @@ def test_paraphrased_evidence_is_blocked(fake_ai):
     assert result.status == "Blocked"
 
 
-@pytest.mark.xfail(strict=True, reason="Gap in rule 1: a Passed with no evidence at all is not downgraded")
-@pytest.mark.parametrize("evidence", [None, []])
+@pytest.mark.parametrize("evidence", [None, [], [""], ["   ", "\n"]])
 def test_passed_without_any_evidence_is_blocked(fake_ai, evidence):
     result = run_case(fake_ai, finish("Passed", evidence))
     assert result.status == "Blocked"
+    assert "quoted no evidence" in result.reason
+
+
+def test_blank_snippet_next_to_missing_one_is_still_blocked(fake_ai):
+    result = run_case(fake_ai, finish("Passed", ["", "Order confirmed"]))
+    assert result.status == "Blocked"
+    assert "Order confirmed" in result.reason
 
 
 # ---------- Other verdicts are not touched by the check ----------

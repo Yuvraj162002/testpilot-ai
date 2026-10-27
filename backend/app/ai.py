@@ -138,7 +138,8 @@ ACTION_TOOLS = [
          "reason": {"type": "string", "description": "What you observed that proves the verdict"},
          "evidence": {"type": "array", "items": {"type": "string"},
                       "description": "1-3 short snippets copied exactly from the current page that support the "
-                                     "verdict, each one a single piece of text (not joined together)"},
+                                     "verdict, each one a single piece of text (not joined together). "
+                                     "Required for Passed: without it the test is marked for review."},
      }, "required": ["status", "reason"]}},
 ]
 
