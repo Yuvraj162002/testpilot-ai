@@ -5,7 +5,7 @@ description: Commit, push or pull this repo safely to the author's personal GitH
 
 # Ship
 
-This laptop's global git identity is the office account (`dev6ak`). This repo must only ever use the
+This laptop's global git identity is a work account. This repo must only ever use the
 personal account. `.claude/hooks/guard-git.sh` enforces it; this skill is the happy path.
 
 ## Before anything
