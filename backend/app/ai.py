@@ -7,6 +7,7 @@ Two providers (AI_PROVIDER in .env):
 import json
 import os
 import subprocess
+import tempfile
 from pathlib import Path
 
 from .models import TestCase
@@ -15,8 +16,9 @@ from .questions import ASK_TOOL
 PROVIDER = os.getenv("AI_PROVIDER") or ("api" if os.getenv("ANTHROPIC_API_KEY") else "claude-cli")
 MODEL = os.getenv("CLAUDE_MODEL") or ("sonnet" if PROVIDER == "claude-cli" else "claude-sonnet-5-5")
 CLI_TIMEOUT_S = 180
-# Empty working dir so `claude -p` doesn't pick up any project's CLAUDE.md or files.
-CLI_CWD = Path(__file__).resolve().parent.parent / "data" / "claude-cli"
+# Empty working dir outside the repo: `claude -p` also reads CLAUDE.md from parent folders, so a dir inside
+# the repo would feed our dev instructions to the test agent.
+CLI_CWD = Path(tempfile.gettempdir()) / "testpilot-claude-cli"
 _client = None
 
 
