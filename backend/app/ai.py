@@ -148,7 +148,9 @@ ACTION_SYSTEM = (
     "snapshot and the actions done so far. Pick exactly ONE next action. Use role and name exactly as they "
     "appear in the snapshot. When the expected result is clearly met call finish with Passed; when it is "
     "clearly not met (error shown, wrong page, missing element) call finish with Failed; if the test cannot "
-    "start because of something unrelated (site down, login wall without credentials) call finish with Blocked."
+    "start because of something unrelated (site down, login wall without credentials) call finish with Blocked. "
+    "Every step must really happen: if a step does not work (a click changes nothing, a panel or page that should appear does not), call finish with "
+    "Failed right away — never Passed because the end state happens to look right."
 )
 
 
@@ -176,7 +178,9 @@ ANDROID_SYSTEM = (
     "element number. Permission or system dialogs: allow them unless the test says otherwise. When the expected "
     "result is clearly met call finish with Passed; when it is clearly not met (error, crash, wrong screen, "
     "missing element) call finish with Failed; if the test cannot start for an unrelated reason call finish "
-    "with Blocked. Evidence must be labels copied exactly from the element list."
+    "with Blocked. Evidence must be labels copied exactly from the element list. "
+    "Every step must really happen: if a step does not work (a click changes nothing, a panel or page that should appear does not), call finish with "
+    "Failed right away — never Passed because the end state happens to look right."
 )
 
 
