@@ -8,9 +8,22 @@ Website URL + plain-English requirements → AI test plan → user reviews → r
 cd backend
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/playwright install chromium        # only needed if Google Chrome is not installed
-cp .env.example .env                          # then put your ANTHROPIC_API_KEY in .env
+cp .env.example .env                          # then pick the AI provider (below)
 cd ../frontend && npm install
 ```
+
+### AI provider (`backend/.env`)
+
+| `AI_PROVIDER` | Needs | Cost | `CLAUDE_MODEL` |
+|---|---|---|---|
+| `claude-cli` (default) | Claude Code installed and logged in on this machine (`claude` works in a terminal) | Your Claude subscription, no extra bill | `sonnet` / `opus` / `haiku` |
+| `api` | `ANTHROPIC_API_KEY` from console.anthropic.com | Pay per call (API billing) | e.g. `claude-sonnet-5-5` |
+
+Each person uses their own Claude login or API key; never share yours. Restart the backend after changing
+`.env`. The Settings screen shows which provider is active.
+
+With `claude-cli` the agent runs as your Claude account, so keep the app local: the backend has no login and
+opens any URL it is given. Don't deploy it publicly until auth and URL checks exist.
 
 ## Run
 
