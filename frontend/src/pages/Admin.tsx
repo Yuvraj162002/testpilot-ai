@@ -32,7 +32,7 @@ export default function Admin() {
       <div className="ph">
         <div>
           <h1>Access codes</h1>
-          <div className="sub">Give one code per tester. Each code sees only its own runs. Revoking a code signs it out.</div>
+          <div className="sub">Give one code per tester. Each code sees only its own runs. Revoking a code signs it out. Codes made here are lost on a server restart unless the server keeps its data; codes in the ACCESS_CODES secret always survive.</div>
         </div>
         <a className="btn" href="/">Back to app</a>
       </div>
@@ -77,11 +77,13 @@ export default function Admin() {
                   <tr key={c.code}>
                     <td><button className="btn s g" title="Copy" onClick={() => copy(c.code)}><code>{c.code}</code></button></td>
                     <td>{c.label}</td>
-                    <td className="mut">{new Date(c.created_at).toLocaleString()}</td>
+                    <td className="mut">{c.fixed ? 'From ACCESS_CODES secret' : new Date(c.created_at).toLocaleString()}</td>
                     <td style={{ textAlign: 'right' }}>
-                      <button className="btn s" disabled={busy} onClick={() => confirm(`Revoke ${c.code} (${c.label})?`) && act(() => api.revokeCode(password, c.code))}>
-                        <Icon name="trash" size={16} />Revoke
-                      </button>
+                      {!c.fixed && (
+                        <button className="btn s" disabled={busy} onClick={() => confirm(`Revoke ${c.code} (${c.label})?`) && act(() => api.revokeCode(password, c.code))}>
+                          <Icon name="trash" size={16} />Revoke
+                        </button>
+                      )}
                     </td>
                   </tr>
                 )) : <tr><td colSpan={4} className="mut">No codes yet.</td></tr>}

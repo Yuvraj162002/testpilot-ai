@@ -111,6 +111,7 @@ export interface AccessCode {
   code: string
   label: string
   created_at: string
+  fixed: boolean // from the ACCESS_CODES secret: survives restarts, can't be revoked here
 }
 
 async function call<T>(path: string, body?: unknown, method?: string, headers?: Record<string, string>): Promise<T> {

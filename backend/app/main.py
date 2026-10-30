@@ -137,7 +137,10 @@ async def create_code(body: NewCode, x_admin_password: str | None = Header(None)
 @app.post("/api/admin/codes/revoke")  # code in the body, not the URL, so it stays out of access logs
 async def revoke_code(body: Revoke, x_admin_password: str | None = Header(None)):
     await admin(x_admin_password)
-    access.revoke(body.code)
+    try:
+        access.revoke(body.code)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
     return {"ok": True}
 
 

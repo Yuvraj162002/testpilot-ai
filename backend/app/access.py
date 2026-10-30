@@ -19,6 +19,16 @@ COOKIE = "tp_access"
 FAIL_DELAY_S = 1  # slows down guessing codes / the admin password
 
 
+def _env_codes(raw: str) -> dict[str, str]:
+    """ACCESS_CODES="Judge 1:tp-abc123,Judge 2:tp-def456" -> {code: label}. Short codes are ignored."""
+    pairs = (item.rsplit(":", 1) for item in raw.split(",") if ":" in item)
+    return {code.strip(): name.strip() or "Tester" for name, code in pairs if len(code.strip()) >= 10}
+
+
+# Codes from a secret survive restarts on hosts without a persistent disk (Hugging Face Spaces).
+ENV_CODES = _env_codes(os.getenv("ACCESS_CODES", ""))
+
+
 def _conn():
     conn = db._conn()
     conn.execute("CREATE TABLE IF NOT EXISTS access_codes (code TEXT PRIMARY KEY, label TEXT NOT NULL, created_at TEXT NOT NULL)")
@@ -41,10 +51,13 @@ def new_code(label: str) -> dict:
 def codes() -> list[dict]:
     with _conn() as conn:
         rows = conn.execute("SELECT code, label, created_at FROM access_codes ORDER BY created_at DESC").fetchall()
-    return [{"code": c, "label": lbl, "created_at": t} for c, lbl, t in rows]
+    fixed = [{"code": c, "label": lbl, "created_at": "", "fixed": True} for c, lbl in ENV_CODES.items()]
+    return fixed + [{"code": c, "label": lbl, "created_at": t, "fixed": False} for c, lbl, t in rows]
 
 
 def revoke(code: str) -> None:
+    if code in ENV_CODES:
+        raise ValueError("This code comes from the ACCESS_CODES secret: remove it there and restart")
     with _conn() as conn:
         conn.execute("DELETE FROM access_codes WHERE code = ?", (code,))
 
@@ -53,6 +66,8 @@ def label(code: str | None) -> str | None:
     """The code's label if the code is valid, else None."""
     if not code:
         return None
+    if code in ENV_CODES:
+        return ENV_CODES[code]
     with _conn() as conn:
         row = conn.execute("SELECT label FROM access_codes WHERE code = ?", (code,)).fetchone()
     return row[0] if row else None

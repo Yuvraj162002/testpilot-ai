@@ -268,3 +268,20 @@ def test_runs_left_running_by_a_restart_are_closed():
     run = db.get(run.id)
     assert run.status == "Needs review"
     assert [r.status for r in run.results] == ["Passed", "Blocked", "Blocked"]
+
+
+# ---------- codes from the ACCESS_CODES secret (hosts without a persistent disk) ----------
+
+def test_env_codes_are_parsed():
+    assert access._env_codes("Judge 1:tp-abc123def, Judge 2 : tp-xyz789uvw ,broken,Short:tp-1") == {
+        "tp-abc123def": "Judge 1", "tp-xyz789uvw": "Judge 2"}
+
+
+def test_env_code_signs_in_and_cannot_be_revoked(api, public, monkeypatch):
+    monkeypatch.setattr(access, "ENV_CODES", {"tp-judge0001": "Judge 1"})
+    sign_in(api, "tp-judge0001")
+    assert api.get("/api/me").json() == {"label": "Judge 1"}
+    listed = api.get("/api/admin/codes", headers=ADMIN).json()
+    assert listed[0]["code"] == "tp-judge0001" and listed[0]["fixed"] is True
+    assert api.post("/api/admin/codes/revoke", json={"code": "tp-judge0001"}, headers=ADMIN).status_code == 400
+    assert api.get("/api/runs").status_code == 200
