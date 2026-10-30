@@ -1,7 +1,7 @@
 # One container: FastAPI serves the API, the demo shop and the built React app.
 # Build:  docker build -t testpilot .
 # Run:    docker run -p 8000:8000 --env-file backend/.env testpilot   -> http://localhost:8000
-# Hosted demo: Hugging Face Spaces (see README "Deploy"), or Fly.io with fly.toml
+# Hosted demo: Fly.io with fly.toml (see README "Deploy")
 FROM node:22-slim AS web
 WORKDIR /app/frontend
 COPY frontend/package*.json ./

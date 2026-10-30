@@ -2,6 +2,8 @@
 
 Website URL + plain-English requirements → AI test plan → user reviews → real browser runs the tests → screenshots, logs and a bug report.
 
+Hackathon submission (problem, architecture, decisions, AI workflow, QA approach, limitations): [SUBMISSION.md](SUBMISSION.md).
+
 ## Setup (once)
 
 ```bash
@@ -70,6 +72,7 @@ bug reports (failed tests only), the answer API and the run history DB.
 | `backend/app/settings.py` | Settings screen values (`backend/data/settings.json`). |
 | `backend/app/runner.py` | Playwright: opens Chromium, does the actions, collects screenshots, console and network errors. |
 | `backend/app/db.py` | Saves runs in a SQLite file (`backend/data/runs.db`). |
+| `backend/app/access.py` | Public mode only: access codes, egress proxy that keeps the browser off private networks. |
 | `backend/app/demo.py` + `backend/demo_site/` | Demo shop "AcmeCart" with the planted bugs. |
 | `backend/runs/` | Screenshots per run (served at `/evidence/...`). |
 | `design.html` | The original clickable prototype, for reference. |
@@ -122,12 +125,3 @@ Demo shop: `https://<app>.fly.dev/demo/`. Afterwards: `fly apps destroy <app>`.
 
 - `backend/.env` holds the API key. It is git-ignored; never commit it and never put the key in the frontend.
 - In local mode the backend opens any URL you give it. Run it only locally, or online in public mode.
-
-## 7-day plan
-
-- [x] Day 0: skeleton — UI, API, plan generation, agent runner, evidence, history
-- [ ] Day 1–2: test on a real site, tune prompts, port the dashboard + settings screens from `design.html`
-- [ ] Day 3: video recording, network log table, report export (PDF / Markdown)
-- [ ] Day 4: bug report screen like the prototype (steps, expected vs actual, confirmed evidence vs AI analysis)
-- [ ] Day 5: re-run a run to verify a fix; post results to Teams
-- [ ] Day 6–7: demo site with 2–3 planted bugs, demo script, polish
