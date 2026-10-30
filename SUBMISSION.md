@@ -1,4 +1,4 @@
-# TestPilot AI — Submission
+# Testara — Submission
 
 AI Product Hackathon 2026 · individual entry · built with Claude Code.
 
@@ -18,7 +18,7 @@ work into code that breaks whenever the UI changes. Small teams often end up doi
 
 ## 2. Product
 
-**TestPilot AI is an AI QA agent.** You give it a website URL and plain-English requirements. It runs real tests and
+**Testara is an AI QA agent.** You give it a website URL and plain-English requirements. It runs real tests and
 hands back evidence.
 
 1. **Plan.** Claude reads the start page and writes a test plan: cases, steps and an observable expected result.
@@ -79,7 +79,7 @@ Chromium ──(public mode: egress proxy)──► the site under test
 | Storage | SQLite (`backend/data/runs.db`), screenshots on disk |
 | Android | adb + uiautomator |
 | Deploy | One Docker image (FastAPI also serves the built UI), Fly.io config in `fly.toml` |
-| Tests | pytest (122 tests, Claude always mocked), oxlint |
+| Tests | pytest (124 tests, Claude always mocked), oxlint |
 
 ## 4. Key technical decisions and trade-offs
 
@@ -194,7 +194,7 @@ each step.
 - **Eval on the demo shop.**
   - The three planted bugs must come back `Failed`; plain add-to-cart must come back `Passed` with real evidence.
   - Last run (29 Oct): all three bugs caught; the four mobile-menu cases all `Failed` with "page did not change".
-- **Automated tests: 122 pytest tests.** Claude is always mocked, and tests never call the real API.
+- **Automated tests: 124 pytest tests.** Claude is always mocked, and tests never call the real API.
   - Verdict grounding, including evidence edge cases and dead clicks
   - Input validation, answers, bug reports and run history
   - Tester API key handling (key never saved, bad keys rejected)

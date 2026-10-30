@@ -1,4 +1,4 @@
-# TestPilot AI — AI QA Agent
+# Testara — AI QA Agent
 
 Website URL + plain-English requirements → AI test plan → user reviews → real browser runs the tests → screenshots, logs and a bug report.
 

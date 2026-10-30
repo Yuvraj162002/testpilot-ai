@@ -1,8 +1,8 @@
-# TestPilot AI — Architecture
+# Testara — Architecture
 
 ## Overview
 
-TestPilot AI is an AI QA agent. A tester gives it a website URL and plain-English requirements:
+Testara is an AI QA agent. A tester gives it a website URL and plain-English requirements:
 
 1. Claude writes a test plan.
 2. The tester reviews and approves it.
@@ -86,7 +86,7 @@ React UI ──/api (JSON, polling)──► FastAPI ──► Claude (plan · n
 | Storage | SQLite; screenshots on disk (Fly volume in production) |
 | Android | adb + uiautomator |
 | Deploy | One Docker image (FastAPI also serves the built UI); Fly.io (`fly.toml`) |
-| Tests | pytest: 122 tests, Claude always mocked |
+| Tests | pytest: 124 tests, Claude always mocked |
 
 ## Integrations
 

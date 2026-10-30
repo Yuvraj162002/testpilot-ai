@@ -4,15 +4,15 @@ Copy each section into the form field with the same name. Each heading shows the
 Each answer was checked against its limit.
 
 ## Project / Product Name (—)
-TestPilot AI
+Testara
 
 ## Problem Statement (2000)
 Testing a web app by hand is slow and repetitive. Someone reads the requirements, writes test cases, clicks through every flow, takes screenshots and writes bug reports — and repeats it after every change. Script-based automation (Selenium, Playwright scripts) moves that work into code that needs engineers to write and breaks whenever the UI changes. Small teams, solo developers and product people often end up doing neither, so bugs like a broken discount code or a mobile menu that never opens reach users.
 
-TestPilot AI is for developers, QA engineers and product owners who want a website tested from plain-English requirements, without writing test scripts, and who need results they can trust. AI that "just says it passed" is not enough: every verdict must be backed by evidence from the real page.
+Testara is for developers, QA engineers and product owners who want a website tested from plain-English requirements, without writing test scripts, and who need results they can trust. AI that "just says it passed" is not enough: every verdict must be backed by evidence from the real page.
 
 ## Solution & Key Features (3000)
-TestPilot AI is an AI QA agent. You give it a website URL and what should work, in plain English. It plans the tests, runs them in a real browser and hands back evidence.
+Testara is an AI QA agent. You give it a website URL and what should work, in plain English. It plans the tests, runs them in a real browser and hands back evidence.
 
 How it works:
 1. Plan: Claude reads the start page and writes test cases (steps, an observable expected result, priority), including negative cases.
@@ -42,12 +42,12 @@ Full stack (frontend + backend + infra): https://github.com/Yuvraj162002/testpil
 <link>   ← product walkthrough + code walkthrough, max 5 minutes, viewable without sign-in
 
 ## How was AI used during development? (5000)
-I built TestPilot AI with Claude Code as my development partner across the whole lifecycle, and reviewed and validated every step myself.
+I built Testara with Claude Code as my development partner across the whole lifecycle, and reviewed and validated every step myself.
 
 - Define: Claude helped turn the idea into one clear journey (URL → plan → review → run → evidence → bug report) and proposed the AcmeCart demo shop with planted bugs, which became the acceptance test.
 - Design: Claude proposed the one-action-at-a-time agent loop, the tool-use schemas, and later the public-mode design (access codes, per-code data, egress proxy). I chose simpler options where it over-engineered (SQLite + polling instead of a queue and websockets).
 - Build: Claude wrote most of the code following the rules and style in CLAUDE.md: FastAPI endpoints, the Playwright runner, the React screens, Android over adb, the API-key dialog and public mode.
-- Test: Claude wrote the pytest suite (122 tests, AI always mocked), including negative and edge cases, and wrote real-Chrome scripts to verify behaviour the unit tests can't (redirects, WebSockets, a full checkout through the proxy).
+- Test: Claude wrote the pytest suite (124 tests, AI always mocked), including negative and edge cases, and wrote real-Chrome scripts to verify behaviour the unit tests can't (redirects, WebSockets, a full checkout through the proxy).
 - Review: a custom qa-reviewer agent reviewed the security-sensitive public-mode diff before commit and found two real holes (screenshot path traversal, private-network access through redirects) plus three smaller issues. I had each reproduced before fixing it.
 - Debug: Claude found why the egress proxy hung (a reader thread holding a lock until timeout) and proved a "redirect error" was a known Chrome quirk by reproducing it without our code.
 - Document: README, SUBMISSION.md, ARCHITECTURE.md and CLAUDE.md, checked against the code.
@@ -127,14 +127,14 @@ Security guardrails (hosted demo):
 
 ## AI-assisted testing strategy (5000)
 Three layers:
-1. Automated tests written with AI (pytest, 122 tests), with Claude always mocked so tests are fast, free and deterministic. They cover verdict grounding, input validation, API behaviour and security. Every bug fix gets a test that fails without the fix.
+1. Automated tests written with AI (pytest, 124 tests), with Claude always mocked so tests are fast, free and deterministic. They cover verdict grounding, input validation, API behaviour and security. Every bug fix gets a test that fails without the fix.
 2. An end-to-end eval on the AcmeCart demo shop, which has three planted bugs. The agent is right only if it marks those cases Failed and marks plain add-to-cart Passed with evidence that is on the page. I ran it after AI or prompt changes, on desktop and mobile viewports.
 3. Real-browser verification scripts for things unit tests can't prove, such as redirects, WebSockets, a full checkout through the egress proxy, and the public-mode UI flow.
 
 On top of that, an AI reviewer agent checks security-sensitive diffs, and the product itself is AI-assisted QA whose output is checked by code (evidence and dead-click checks).
 
 ## Tests created or executed (5000)
-- Unit and integration tests (pytest, FastAPI TestClient): 122, all passing.
+- Unit and integration tests (pytest, FastAPI TestClient): 124, all passing.
   - Verdict grounding (test_evidence.py): evidence on the page or not, case and whitespace, accessible names, blank and paraphrased evidence, previous-page evidence, dead clicks, step limit, failed actions.
   - Input validation (test_validation.py): URL schemes, javascript: and file: URLs, APK paths, requirements length.
   - Answers and bug reports (test_answer.py, test_bug_report.py): waiting and not waiting, invalid bodies, unknown runs, running runs.
