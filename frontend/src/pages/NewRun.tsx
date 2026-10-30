@@ -37,6 +37,7 @@ const PHASE_MS = 4000
 
 export default function NewRun({ go, prefill }: { go: (s: Screen) => void; prefill?: Partial<Target> }) {
   const [platform, setPlatform] = useState<Platform>(prefill?.platform ?? 'web')
+  const [ios, setIos] = useState(false) // iOS tab only shows "coming soon"
   const [url, setUrl] = useState(prefill?.platform !== 'android' ? prefill?.url ?? '' : '')
   const [apk, setApk] = useState(prefill?.platform === 'android' ? prefill.url ?? '' : readApk())
   const [clearData, setClearData] = useState(prefill?.clear_data ?? true)
@@ -69,6 +70,7 @@ export default function NewRun({ go, prefill }: { go: (s: Screen) => void; prefi
   }, [platform])
 
   function choose(p: Platform) {
+    setIos(false)
     setPlatform(p)
     setError('')
     setReq(p === 'android' ? APP_EXAMPLE : WEB_EXAMPLES[0])
@@ -113,12 +115,21 @@ export default function NewRun({ go, prefill }: { go: (s: Screen) => void; prefi
         <div className="cb" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20, ...(busy ? { opacity: 0.4, pointerEvents: 'none' } : {}) }}>
           <div>
             <label className="lbl">What do you want to test?</label>
-            <div className="seg" style={{ maxWidth: 360 }}>
-              <button className={platform === 'web' ? 'on' : ''} onClick={() => choose('web')}><Icon name="globe" size={16} />Website</button>
-              <button className={platform === 'android' ? 'on' : ''} onClick={() => choose('android')}><Icon name="mob" size={16} />Android app (APK)</button>
+            <div className="seg" style={{ maxWidth: 540, whiteSpace: 'nowrap' }}>
+              <button className={!ios && platform === 'web' ? 'on' : ''} onClick={() => choose('web')}><Icon name="globe" size={16} />Website</button>
+              <button className={!ios && platform === 'android' ? 'on' : ''} onClick={() => choose('android')}><Icon name="mob" size={16} />Android app (APK)</button>
+              <button className={ios ? 'on' : ''} onClick={() => { setIos(true); setError('') }}><Icon name="mob" size={16} />iOS app</button>
             </div>
           </div>
 
+          {ios ? (
+            <div style={{ border: '1.5px dashed var(--bd)', borderRadius: 14, background: 'var(--bg)', padding: '40px 24px', textAlign: 'center' }}>
+              <div className="mk" style={{ width: 52, height: 52, margin: '0 auto 14px', borderRadius: 14, background: 'var(--tint)', color: 'var(--prit)' }}><Icon name="mob" size={26} /></div>
+              <div className="f6" style={{ fontSize: 20 }}>iOS app testing is coming soon</div>
+              <div className="mut" style={{ maxWidth: 420, margin: '6px auto 18px' }}>Soon you'll test iPhone apps the same way as Android APKs. For now, test a website or an Android app.</div>
+              <button className="btn" onClick={() => go({ name: 'soon' })}><Icon name="spark" size={16} />See what's coming</button>
+            </div>
+          ) : <>
           {platform === 'web' ? (
             <div>
               <label className="lbl">Website URL</label>
@@ -177,11 +188,14 @@ export default function NewRun({ go, prefill }: { go: (s: Screen) => void; prefi
               <div className="hint">{VIEWPORTS[viewport]} px</div>
             </div>
           )}
+          </>}
           <div className="row" style={{ borderTop: '1px solid var(--line)', paddingTop: 18 }}>
             <button className="btn" onClick={() => go({ name: 'dash' })}>Cancel</button>
-            <button className="btn p sp" style={{ height: 42, padding: '0 20px' }} disabled={busy} onClick={generate}>
-              <Icon name="spark" size={16} />Generate Test Plan
-            </button>
+            {!ios && (
+              <button className="btn p sp" style={{ height: 42, padding: '0 20px' }} disabled={busy} onClick={generate}>
+                <Icon name="spark" size={16} />Generate Test Plan
+              </button>
+            )}
           </div>
         </div>
         {busy && (

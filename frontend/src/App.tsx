@@ -4,6 +4,7 @@ import { AccessScreen, CommandPalette, KeyDialog, Toasts } from './components'
 import { Icon, type IconName } from './icons'
 import Admin from './pages/Admin'
 import BugReport from './pages/BugReport'
+import ComingSoon from './pages/ComingSoon'
 import Dashboard from './pages/Dashboard'
 import History from './pages/History'
 import NewRun from './pages/NewRun'
@@ -20,16 +21,18 @@ export type Screen =
   | { name: 'bug'; runId: number; caseId: number }
   | { name: 'history'; filter?: string }
   | { name: 'settings' }
+  | { name: 'soon' }
 
 const NAV: [Screen['name'], string, IconName][] = [
   ['dash', 'Dashboard', 'grid'],
   ['new', 'New Test Run', 'plus'],
   ['history', 'Test History', 'clock'],
   ['settings', 'Settings', 'sliders'],
+  ['soon', 'Coming Soon', 'spark'],
 ]
 // Which sidebar item is highlighted for each screen.
 const ACTIVE: Record<Screen['name'], Screen['name']> = {
-  dash: 'dash', new: 'new', plan: 'new', run: 'new', bug: 'history', history: 'history', settings: 'settings',
+  dash: 'dash', new: 'new', plan: 'new', run: 'new', bug: 'history', history: 'history', settings: 'settings', soon: 'soon',
 }
 
 export default function App() {
@@ -41,6 +44,19 @@ export default function App() {
   // Hosted version: null = still checking, '' = needs an access code, else the code's label.
   const [access, setAccess] = useState<string | null>(null)
   const [hosted, setHosted] = useState(false)
+  const [light, setLight] = useState(document.documentElement.dataset.theme === 'light')
+
+  function toggleTheme() {
+    const next = !light
+    setLight(next)
+    if (next) document.documentElement.dataset.theme = 'light'
+    else delete document.documentElement.dataset.theme
+    try {
+      localStorage.setItem('testpilot.theme', next ? 'light' : 'dark')
+    } catch {
+      /* storage blocked — theme just isn't remembered */
+    }
+  }
 
   const go = (s: Screen) => {
     setScreen(s)
@@ -100,6 +116,9 @@ export default function App() {
         <button className="nav" onClick={() => setKeyDialog(true)}>
           <Icon name="key" /><span className="tx">{getApiKey() ? 'API key added' : 'Add API key'}</span>
         </button>
+        <button className="thm" onClick={toggleTheme} aria-label={light ? 'Switch to dark mode' : 'Switch to light mode'}>
+          <Icon name={light ? 'moon' : 'sun'} /><span className="tx">{light ? 'Dark mode' : 'Light mode'}</span>
+        </button>
         <button className="nav" style={{ marginTop: 8 }} onClick={() => setMini(!mini)}>
           <Icon name="panel" /><span className="tx">{mini ? 'Expand' : 'Collapse'}</span>
         </button>
@@ -122,6 +141,7 @@ export default function App() {
         {screen.name === 'bug' && <BugReport runId={screen.runId} caseId={screen.caseId} go={go} />}
         {screen.name === 'history' && <History go={go} initialFilter={screen.filter} />}
         {screen.name === 'settings' && <Settings />}
+        {screen.name === 'soon' && <ComingSoon go={go} />}
       </main>
       <Toasts />
       {palette && <CommandPalette go={go} close={() => setPalette(false)} />}

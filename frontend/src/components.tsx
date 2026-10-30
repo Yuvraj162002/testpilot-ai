@@ -12,6 +12,27 @@ export const STATUS_CLASS: Record<string, string> = {
   Queued: 'neu',
 }
 
+/** A number that counts up to its value (and from the old value when it changes). */
+export function CountUp({ n }: { n: number }) {
+  const [shown, setShown] = useState(0)
+  const from = useRef(0)
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches
+  useEffect(() => {
+    if (still) return
+    const start = performance.now(), a = from.current
+    let raf = 0
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / 700, 1)
+      from.current = Math.round(a + (n - a) * (1 - (1 - p) ** 3))
+      setShown(from.current)
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [n, still])
+  return <>{still ? n : shown}</>
+}
+
 export function Badge({ status }: { status: Status | RunStatus }) {
   return <span className={`b d ${STATUS_CLASS[status]}`}>{status}</span>
 }
@@ -168,6 +189,7 @@ export function CommandPalette({ go, close }: { go: (s: Screen) => void; close: 
       ['New Test Run', 'plus', { name: 'new' }],
       ['Test History', 'clock', { name: 'history' }],
       ['Settings', 'sliders', { name: 'settings' }],
+      ['Coming Soon', 'spark', { name: 'soon' }],
       ...runs.map(r => [`Run #${r.id} · ${host(r.url)} · ${r.status}`, 'search', { name: 'run', runId: r.id }] as [string, IconName, Screen]),
     ]
     return base.filter(x => x[0].toLowerCase().includes(q.toLowerCase())).slice(0, 8)

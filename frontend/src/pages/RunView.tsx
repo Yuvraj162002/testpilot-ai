@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { api, VIEWPORTS, type Run, type Status, type TestCase } from '../api'
 import type { Screen } from '../App'
-import { Badge, CaseEditor, cleanCase, fmtDate, host, QuestionDialog, Steps, toast } from '../components'
-import { Icon } from '../icons'
+import { Badge, CaseEditor, CountUp, cleanCase, fmtDate, host, QuestionDialog, Steps, toast } from '../components'
+import { Icon, type IconName } from '../icons'
 import { download, runMarkdown } from '../report'
 
 const POLL_MS = 1500
@@ -13,6 +13,67 @@ function StatusIcon({ status }: { status: Status }) {
   if (status === 'Running') return <span className="spin" style={{ color: '#4F46E5' }}><Icon name="load" /></span>
   if (status === 'Queued') return <span className="mut"><Icon name="clock" /></span>
   return <span style={{ color: '#D97706' }}><Icon name="ban" /></span>
+}
+
+type Step = { icon: IconName; verb: string; text: string; tone: string }
+
+// Turns one execution-log line (written by runner.py / android.py) into a timeline step.
+function step(line: string): Step {
+  let m: RegExpMatchArray | null
+  if ((m = line.match(/^goto (.*)$/))) return { icon: 'globe', verb: 'Opened page', text: m[1], tone: 'ind' }
+  if ((m = line.match(/^(click|tap)(?: \[\d+\])? (\S+) '(.*)'$/))) return { icon: 'pointer', verb: m[1] === 'tap' ? 'Tapped' : 'Clicked', text: `${m[3]} (${m[2]})`, tone: 'ind' }
+  if ((m = line.match(/^(?:fill (\S+)|type \[\d+\]) '(.*)' = '(.*)'$/))) return { icon: 'edit', verb: 'Typed', text: `"${m[3]}" into ${m[2]}`, tone: 'ind' }
+  if ((m = line.match(/^press (.*)$/))) return { icon: 'key', verb: 'Pressed', text: m[1], tone: 'ind' }
+  if ((m = line.match(/^scroll (.*)$/))) return { icon: 'cd', verb: 'Scrolled', text: m[1], tone: 'ind' }
+  if ((m = line.match(/^launch (.*)$/))) return { icon: 'rocket', verb: 'Launched app', text: m[1], tone: 'ind' }
+  if ((m = line.match(/^ASKED (.*) -> (.*)$/))) return { icon: 'spark', verb: 'Asked you', text: `${m[1]} → ${m[2]}`, tone: 'neu' }
+  if ((m = line.match(/^NO CHANGE: (.*)$/))) return { icon: 'alert', verb: 'Nothing changed', text: m[1], tone: 'warn' }
+  if ((m = line.match(/^ERROR (\S+) (.*)$/))) return { icon: 'no', verb: `${m[1]} failed`, text: m[2], tone: 'bad' }
+  return { icon: 'cr', verb: 'Step', text: line, tone: 'neu' }
+}
+
+const VERDICT: Partial<Record<Status, [IconName, string]>> = { Passed: ['ok', 'ok'], Failed: ['no', 'bad'], Blocked: ['ban', 'warn'] }
+
+/** The agent's actions as a live timeline; the raw log stays one click away. */
+function Timeline({ log, status }: { log: string[]; status: Status }) {
+  const end = VERDICT[status]
+  if (!log.length && status === 'Queued') return <div className="mut" style={{ fontSize: 13 }}>Waiting to run…</div>
+  return (
+    <>
+      <div className="tl">
+        {log.map((line, i) => {
+          const s = step(line)
+          return (
+            <div key={i} className="tl-i">
+              <div className={`tl-d ${s.tone}`}><Icon name={s.icon} size={14} /></div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div className="tl-v">{s.verb}<span className="sp">#{i + 1}</span></div>
+                <div className="tl-t">{s.text}</div>
+              </div>
+            </div>
+          )
+        })}
+        {status === 'Running' && (
+          <div className="tl-i now">
+            <div className="tl-d ind"><Icon name="spark" size={14} /></div>
+            <div><div className="tl-v">AI is thinking</div><div className="tl-t mut">Reading the page and choosing the next action…</div></div>
+          </div>
+        )}
+        {end && (
+          <div className="tl-i">
+            <div className={`tl-d ${end[1]}`}><Icon name={end[0]} size={14} /></div>
+            <div><div className="tl-v">Verdict</div><div className="tl-t f6">{status}</div></div>
+          </div>
+        )}
+      </div>
+      {log.length > 0 && (
+        <details style={{ marginTop: 4 }}>
+          <summary className="mut" style={{ fontSize: 12, cursor: 'pointer' }}>Raw log</summary>
+          <div className="code" style={{ marginTop: 6 }}>{log.join('\n')}</div>
+        </details>
+      )}
+    </>
+  )
 }
 
 export default function RunView({ runId, go }: { runId: number; go: (s: Screen) => void }) {
@@ -125,7 +186,7 @@ export default function RunView({ runId, go }: { runId: number; go: (s: Screen) 
       </div>
       <div className="g4" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
         {([['Passed', '#16A34A'], ['Failed', '#DC2626'], ['Blocked', '#D97706']] as [Status, string][]).map(([s, c]) => (
-          <div key={s} className="card kpi" style={{ cursor: 'default' }}><div className="l">{s}</div><div className="n" style={{ color: c }}>{count(s)}</div></div>
+          <div key={s} className="card kpi" style={{ cursor: 'default' }}><div className="l">{s}</div><div className="n" style={{ color: c }}><CountUp n={count(s)} /></div></div>
         ))}
       </div>
 
@@ -179,8 +240,8 @@ export default function RunView({ runId, go }: { runId: number; go: (s: Screen) 
                   </a>
                 </>
               )}
-              <div className="f5 mut" style={{ fontSize: 12, margin: '12px 0 6px' }}>Execution log</div>
-              <div className="code">{t.log.join('\n') || (t.status === 'Running' ? 'Running…' : 'Waiting to run…')}</div>
+              <div className="f5 mut" style={{ fontSize: 12, margin: '12px 0 8px' }}>What the agent did</div>
+              <Timeline key={t.case.id} log={t.log} status={t.status} />
               {(t.console_errors.length > 0 || t.network_errors.length > 0) && (
                 <>
                   <div className="f5 mut" style={{ fontSize: 12, margin: '12px 0 6px' }}>{run.platform === 'android' ? 'App errors (logcat)' : <>Console &amp; network errors</>}</div>

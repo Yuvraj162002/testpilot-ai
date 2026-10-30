@@ -162,7 +162,7 @@ export default function BugReport({ runId, caseId, go }: { runId: number; caseId
 
         <div className="r">
           <div className="card" style={{ marginBottom: 14 }}>
-            <div className="ch" style={{ color: '#4ADE80' }}>Confirmed evidence</div>
+            <div className="ch grn">Confirmed evidence</div>
             <div className="cb" style={{ fontSize: 13, display: 'flex', flexDirection: 'column', gap: 9 }}>
               <div className="mut" style={{ fontSize: 12 }}>Observed directly during the run.</div>
               {(facts.length ? facts : ['The expected result did not appear (see screenshot and verdict).']).map((t, i) => (
