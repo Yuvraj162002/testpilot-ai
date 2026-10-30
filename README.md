@@ -22,8 +22,11 @@ cd ../frontend && npm install
 Each person uses their own Claude login or API key; never share yours. Restart the backend after changing
 `.env`. The Settings screen shows which provider is active.
 
-With `claude-cli` the agent runs as your Claude account, so keep the app local: the backend has no login and
-opens any URL it is given. Don't deploy it publicly until auth and URL checks exist.
+With `claude-cli` the agent runs as your Claude account, so keep the app local: in local mode the backend has
+no login and opens any URL it is given. Only put it online in public mode (see "Deploy (hosted demo)").
+
+Anyone can also click **Add API key** in the sidebar and use their own Anthropic key. It stays in that browser
+tab's memory, is sent with each request, and is never saved on the server.
 
 ## Run
 
@@ -88,13 +91,37 @@ docker build -t testpilot .
 docker run -p 8000:8000 --env-file backend/.env testpilot     # http://localhost:8000
 ```
 
-Any VM / Render / Railway that runs Docker works; Chromium needs ~1–2 GB RAM.
-Add a password before putting it on the internet (anyone with the link can make it open URLs).
+Never put it on the internet like this: local mode has no login and opens any URL, including private ones.
+
+## Deploy (hosted demo, Fly.io)
+
+`PUBLIC_MODE=1` (set in `fly.toml`) turns on:
+
+- **Access codes.** The app asks for a code. You create and revoke codes at `/#admin` with `ADMIN_PASSWORD`.
+  Each code sees only its own runs, screenshots and bug reports.
+- **Own API key required.** Every tester adds their Anthropic key. The server's login or key is never used.
+- **Egress proxy.** All browser traffic (pages, redirects, fetch, WebSockets) goes through a small proxy in
+  `access.py`. The proxy resolves each host once, refuses `localhost`, private networks, Fly's internal network
+  and cloud metadata IPs, and connects to the exact IP it checked, which also stops DNS rebinding.
+- **Limits.** Android is off, settings are read-only, API docs are hidden, each code runs one test run at a
+  time, and at most `MAX_BROWSERS` browsers run together.
+
+```bash
+fly auth login
+fly launch --no-deploy --copy-config        # keep fly.toml; change `app` if the name is taken
+fly volumes create testpilot_data --size 1 --region bom
+fly secrets set ADMIN_PASSWORD='<long random password>'
+fly deploy
+fly scale count 1                           # exactly one machine (SQLite + background runs)
+```
+
+Then open `https://<app>.fly.dev/#admin`, create a code per tester and share the link and code.
+Demo shop: `https://<app>.fly.dev/demo/`. Afterwards: `fly apps destroy <app>`.
 
 ## Rules
 
 - `backend/.env` holds the API key. It is git-ignored; never commit it and never put the key in the frontend.
-- The backend opens any URL you give it — run it only locally / on a trusted network.
+- In local mode the backend opens any URL you give it. Run it only locally, or online in public mode.
 
 ## 7-day plan
 

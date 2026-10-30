@@ -31,6 +31,7 @@ cd backend && .venv/bin/pytest   # tests; ai._tool_call is mocked, never call th
 | `backend/app/runner.py` | Playwright loop, evidence check, screenshots, console/network capture |
 | `backend/app/android.py` | Same loop over adb + uiautomator |
 | `backend/app/questions.py` | Human in the loop: the agent pauses and asks the tester |
+| `backend/app/access.py` | Public mode: access codes, per-code data, URL checks for the server's browser |
 | `backend/app/models.py` | Pydantic models + input validation (URL/APK, requirements length) |
 | `backend/app/db.py` | SQLite run history (`backend/data/runs.db`, each run as JSON) |
 | `backend/demo_site/` | AcmeCart demo shop |
@@ -47,8 +48,10 @@ cd backend && .venv/bin/pytest   # tests; ai._tool_call is mocked, never call th
    a key in the frontend.
 4. **No customer apps or data.** Don't commit or demo client APKs or runs against client sites.
    `backend/data/` and `backend/runs/` are git-ignored for this reason.
-5. **The backend opens any URL it is given.** Treat it as local-only until auth and URL checks exist;
-   don't deploy it publicly without them.
+5. **Online only in public mode.** Locally the backend opens any URL and has no login. A deploy must run
+   with `PUBLIC_MODE=1` (`access.py`): access codes, each code sees only its own runs (screenshots via the
+   owner-checked `/evidence` route), all browser traffic through the egress proxy that blocks private/internal
+   IPs, Android off. Never weaken these checks.
 6. Keep `claude -p` out of the repo tree (`ai.CLI_CWD` is in the temp dir) so this file never reaches the
    test agent's prompt.
 7. Small, readable code over abstractions. Match the existing style: short docstrings, comments only for
@@ -77,3 +80,9 @@ cd backend && .venv/bin/pytest   # tests; ai._tool_call is mocked, never call th
 - `claude -p` reads `CLAUDE.md` from parent folders, so running it from `backend/data/` would have leaked
   this file into the test agent → moved its working dir to the temp dir.
 - Android emulator with software rendering was too slow for the agent loop → test on a real phone over adb.
+- A prompt-only "fail when a step never happens" fix was not enough → `runner.py` now detects clicks that change
+  nothing and downgrades a `Passed` after one.
+- A test wrote screenshots into the real `backend/runs/` (the temp DB starts run ids at 1) and overwrote a real
+  screenshot → tests must patch evidence paths to `tmp_path`, never write to `backend/runs/` or `backend/data/`.
+- The first public-mode guard used Playwright `route`, which redirects, WebSockets and DNS rebinding all bypassed
+  (found by the `qa-reviewer` agent) → replaced it with an egress proxy that pins the checked IP.
