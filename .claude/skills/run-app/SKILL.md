@@ -1,6 +1,6 @@
 ---
 name: run-app
-description: Start TestPilot AI locally and smoke-test it end to end on the AcmeCart demo shop. Use when the user asks to run, start or check the app, says the links don't open, or after a backend/AI change.
+description: Start Testara locally and smoke-test it end to end on the AcmeCart demo shop. Use when the user asks to run, start or check the app, says the links don't open, or after a backend/AI change.
 ---
 
 # Run and smoke-test

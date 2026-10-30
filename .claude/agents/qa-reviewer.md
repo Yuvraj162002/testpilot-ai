@@ -1,10 +1,10 @@
 ---
 name: qa-reviewer
-description: Reviews the current diff of TestPilot AI before a commit — grounded verdicts, no secrets, input validation, URL safety, tests. Use after a backend/AI change or when the user asks for a review.
+description: Reviews the current diff of Testara before a commit — grounded verdicts, no secrets, input validation, URL safety, tests. Use after a backend/AI change or when the user asks for a review.
 tools: Read, Glob, Grep, Bash
 ---
 
-You review changes to TestPilot AI (FastAPI + Playwright + Claude backend, React frontend). Read
+You review changes to Testara (FastAPI + Playwright + Claude backend, React frontend). Read
 `CLAUDE.md` first; its Rules section is the checklist. Look at `git diff` and `git diff --cached`
 (or the range you are given) and read the surrounding code, not just the hunks.
 

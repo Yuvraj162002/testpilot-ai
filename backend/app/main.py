@@ -146,7 +146,7 @@ async def revoke_code(body: Revoke, x_admin_password: str | None = Header(None))
 
 def check_target(req) -> None:
     if access.PUBLIC and req.platform == "android":
-        raise HTTPException(400, "Android testing is only available when you run TestPilot on your own computer")
+        raise HTTPException(400, "Android testing is only available when you run Testara on your own computer")
     if req.platform == "web" and (why := access.blocked(req.url)):
         raise HTTPException(400, f"Can't test {req.url}: {why}")
 

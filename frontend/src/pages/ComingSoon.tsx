@@ -6,11 +6,11 @@ type Item = [IconName, string, string]
 const GROUPS: [string, string, Item[]][] = [
   ['Next up', 'The first things we are building.', [
     ['mob', 'iOS app testing', 'Test iPhone apps the same way as Android APKs: the AI plans the tests, taps through the app and reports bugs with screenshots.'],
-    ['globe', 'Hosted version', 'Use TestPilot AI straight from the browser. No setup, nothing to install on your computer.'],
+    ['globe', 'Hosted version', 'Use Testara straight from the browser. No setup, nothing to install on your computer.'],
     ['spark', 'No API key needed', 'Start testing right away. Bringing your own Anthropic key becomes optional.'],
     ['eye', 'Compare with Figma', 'Link a Figma design and the AI checks the live page against it: missing elements, wrong text, layout differences.'],
   ]],
-  ['Fits your workflow', 'TestPilot AI where your team already works.', [
+  ['Fits your workflow', 'Testara where your team already works.', [
     ['link', 'Jira, Slack and Teams', 'Send a bug report to Jira as a ticket, or post run results to a Slack or Teams channel in one click.'],
     ['clock', 'Scheduled runs', 'Run a saved test plan every night and get an alert when something that used to pass starts failing.'],
     ['play', 'CI integration', 'Run your test plans from GitHub Actions on every pull request or deploy.'],
@@ -35,7 +35,7 @@ export default function ComingSoon({ go }: { go: (s: Screen) => void }) {
       <div className="card cb row" style={{ background: 'linear-gradient(135deg, var(--tint), var(--card))', padding: 22, marginBottom: 26, gap: 16 }}>
         <div className="mk" style={{ width: 48, height: 48, borderRadius: 14, flexShrink: 0 }}><Icon name="rocket" size={24} /></div>
         <div>
-          <div className="f6" style={{ fontSize: 17 }}>TestPilot AI is just getting started</div>
+          <div className="f6" style={{ fontSize: 17 }}>Testara is just getting started</div>
           <div className="mut" style={{ fontSize: 14 }}>Today it tests websites and Android apps with grounded verdicts and real evidence. Here is where it goes next.</div>
         </div>
       </div>

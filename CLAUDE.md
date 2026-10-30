@@ -5,7 +5,7 @@ something goes wrong.
 
 ## What this is
 
-**TestPilot AI**: an AI QA agent. Website URL + plain-English requirements → Claude writes a test plan →
+**Testara**: an AI QA agent. Website URL + plain-English requirements → Claude writes a test plan →
 the user reviews/edits it → a real Chromium browser (Playwright) runs each case, with Claude picking one
 action at a time → results with screenshots, console/network errors and an AI-written bug report.
 Android APKs are supported over adb. Built solo for the AI Product Hackathon 2026 (deadline 30 Oct 2026).

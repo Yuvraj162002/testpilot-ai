@@ -312,7 +312,7 @@ export function KeyDialog({ required, close }: { required: boolean; close: () =>
             <Icon name="key" size={16} /><span className="f6">Your Anthropic API key</span>
           </div>
           <div style={{ fontSize: 13, marginBottom: 12 }}>
-            TestPilot uses your own key to write plans, drive the browser and write bug reports. Usage is billed
+            Testara uses your own key to write plans, drive the browser and write bug reports. Usage is billed
             to your Anthropic account.
           </div>
           <div className="row">
@@ -362,7 +362,7 @@ export function AccessScreen({ done }: { done: (label: string) => void }) {
       <div className="card" style={{ width: 'min(440px,100%)' }}><div className="cb">
         <div className="row" style={{ marginBottom: 10 }}>
           <div className="logo" style={{ padding: 0 }}><div className="mk"><Icon name="rocket" /></div></div>
-          <span className="f6" style={{ fontSize: 18 }}>TestPilot AI</span>
+          <span className="f6" style={{ fontSize: 18 }}>Testara</span>
         </div>
         <div style={{ fontSize: 13, marginBottom: 14 }}>
           This hosted demo is invite-only. Enter the access code you were given.

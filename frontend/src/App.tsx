@@ -103,7 +103,7 @@ export default function App() {
       <aside>
         <div className="logo">
           <div className="mk"><Icon name="rocket" /></div>
-          <span className="tx">TestPilot AI</span>
+          <span className="tx">Testara</span>
         </div>
         <button className="srch" onClick={() => setPalette(true)}>
           <Icon name="search" size={16} /><span className="tx">Search</span><kbd className="tx">Ctrl K</kbd>

@@ -47,7 +47,7 @@ function updateCount() {
 renderHeader()
 document.body.insertAdjacentHTML('beforeend', `
   <footer>
-    <div><b>AcmeCart</b><p>Demo shop for TestPilot AI. Not a real store.</p></div>
+    <div><b>AcmeCart</b><p>Demo shop for Testara. Not a real store.</p></div>
     <div><b>Shop</b><a href="/demo/">New arrivals</a><a href="/demo/checkout.html">Cart</a></div>
     <div><b>Account</b><a href="/demo/login.html">Sign in</a></div>
   </footer>`)

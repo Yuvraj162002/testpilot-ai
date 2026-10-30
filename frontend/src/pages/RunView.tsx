@@ -122,7 +122,7 @@ export default function RunView({ runId, go }: { runId: number; go: (s: Screen) 
   const firstIssue = run.results.findIndex(r => r.status === 'Failed' || r.status === 'Blocked')
   const waiting = run.results.find(r => r.question && r.question.answer === null)
   const questionKey = waiting ? `${waiting.case.id}:${waiting.question!.asked_at}` : null
-  document.title = waiting ? '(?) Answer needed · TestPilot AI' : 'TestPilot AI'
+  document.title = waiting ? '(?) Answer needed · Testara' : 'Testara'
 
   // A re-run is a new run on the same target, so the old result stays in history.
   async function rerun(cases: TestCase[]) {
