@@ -26,6 +26,8 @@ Standout features:
 - Human in the loop: the agent pauses and asks the tester when it is unsure (missing test data, before paying or deleting).
 - Retry of failed cases to flag flaky results; run history, dashboard, Markdown export, Ctrl+K search.
 - Android APKs over adb with the same agent loop (local).
+- Live agent timeline on the run screen: every action (opened, clicked, typed, nothing changed) and the verdict, with the raw log one click away.
+- Light and dark theme; a Coming Soon screen shows the roadmap (iOS, hosted version, Figma compare, CI).
 - AcmeCart demo shop with three planted bugs (SAVE10 → HTTP 500, mobile menu never opens, wrong password shows no error) used as the acceptance test: the agent finds all three.
 - Deploy-ready "public mode" for a hosted demo: invite-only access codes, each code sees only its own runs, each tester uses their own Anthropic API key (kept in memory, never stored), and an egress proxy stops the browser from reaching private networks.
 - Runs free locally with a Claude Code login, or with an API key.
@@ -175,6 +177,7 @@ On top of that, an AI reviewer agent checks security-sensitive diffs, and the pr
 - AI is non-deterministic: checks stop false passes, but a case can still fail for the wrong reason, so run the eval more than once.
 - CAPTCHAs, 2FA and complex canvas or drag-and-drop UIs are out of scope; long flows can hit the 15-action limit.
 - Paraphrased evidence turns a correct pass into "needs review".
+- iOS apps are not supported yet (the iOS tab shows "coming soon").
 - The hosted demo runs on one machine with two browsers at a time, uses access codes rather than accounts, and has no Android.
 - The proxy covers HTTP(S) and WebSockets; WebRTC UDP is disabled.
 
@@ -201,4 +204,4 @@ Next steps:
 6. A job queue and Postgres for several machines; video recording of runs.
 
 ## Pre-existing Work Disclosure (yes / no)
-<choose yes or no — tell me what existed before 1 Oct 2026, e.g. the design.html prototype, and I'll write the note>
+<choose yes or no in the form>

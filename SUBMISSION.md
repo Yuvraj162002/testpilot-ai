@@ -34,8 +34,11 @@ Also included:
 - **Retry.** A failed case can be retried once to flag flaky results.
 - **History, dashboard and export.** Runs are kept with history and a dashboard, and can be exported as Markdown.
 - **Android APKs.** APKs can be tested over adb with the same loop (local only).
+- **Agent timeline.** The run screen shows each action the agent took (opened, clicked, typed, nothing changed,
+  verdict) as a live timeline, with the raw log one click away.
+- **Light and dark theme**, and a Coming Soon screen with the roadmap (iOS, hosted version, Figma compare, CI).
 
-**Demo shop.** AcmeCart (`/demo/`) has three planted bugs: discount code SAVE10 → HTTP 500, the mobile menu never
+**Demo shop.** AcmeCart (`/demo/`) is a small store (6 products, categories, search, cart, checkout, sign-in) with three planted bugs: discount code SAVE10 → HTTP 500, the mobile menu never
 opens, and a wrong password shows no error. The agent is only right if it finds all three.
 
 ## 3. Architecture
@@ -213,6 +216,7 @@ each step.
   - It runs on one machine (SQLite) and allows 2 browsers at a time.
   - Access is by codes, not user accounts or email.
   - Android works only locally.
+- **iOS.** Not supported yet; the iOS tab on New Test Run shows "coming soon".
 - **Paraphrased evidence.** The evidence check is an exact (case and whitespace-insensitive) text match, so a
   correct pass with paraphrased evidence becomes "needs review".
 - **Proxy scope.** The egress proxy handles HTTP(S) and WebSockets. Other protocols are not proxied (WebRTC UDP is
@@ -229,12 +233,15 @@ each step.
   - adb, for Android
   - Fly.io, for the hosted demo
 
-## 10. Pre-existing work
+## 10. Run it
 
-`<FILL IN BEFORE SUBMITTING: say what, if anything, existed before 1 Oct 2026 (for example the design.html
-prototype or earlier code), and that the git history starts on 27 Oct because work was moved into this repository
-then. If nothing pre-existed, say so.>`
+On your own laptop (Linux/macOS, or WSL on Windows), with Python 3.10+, Node.js 20.19+ and Claude Code or an
+Anthropic API key:
 
-## 11. Run it
+```bash
+git clone https://github.com/Yuvraj162002/testpilot-ai.git && cd testpilot-ai
+./setup.sh      # one-time setup
+./dev.sh        # then open http://localhost:5173 and click "use demo shop"
+```
 
-See [README.md](README.md) for local setup, tests and the Fly.io deploy.
+[README.md](README.md) has the details, troubleshooting, tests and the Fly.io deploy.

@@ -4,7 +4,45 @@ Website URL + plain-English requirements → AI test plan → user reviews → r
 
 Hackathon submission (problem, architecture, decisions, AI workflow, QA approach, limitations): [SUBMISSION.md](SUBMISSION.md).
 
-## Setup (once)
+## Run it on your own laptop
+
+Takes about 5 minutes. Works on Linux and macOS; on Windows use WSL (the scripts are bash).
+
+**You need:** Git, Python 3.10+, Node.js 20.19+, and one way to reach Claude:
+[Claude Code](https://claude.com/claude-code) installed and logged in (`claude` works in a terminal), **or** an
+Anthropic API key. Google Chrome is used if installed; otherwise setup downloads Chromium.
+
+```bash
+# 1. Get the code
+git clone https://github.com/Yuvraj162002/testpilot-ai.git
+cd testpilot-ai
+
+# 2. One-time setup: Python venv + packages, browser, backend/.env, frontend packages
+./setup.sh
+
+# 3. Only if you use an API key instead of Claude Code: edit backend/.env
+#      AI_PROVIDER=api
+#      ANTHROPIC_API_KEY=sk-ant-...
+
+# 4. Start backend + frontend (Ctrl+C stops both)
+./dev.sh
+```
+
+5. Open http://localhost:5173 → **New Test Run** → **use demo shop** → example **Checkout** →
+   **Generate Test Plan** → **Approve & Run Tests**. In 2–4 minutes the agent should fail the SAVE10 case with an
+   HTTP 500 and show the evidence.
+
+**If something goes wrong**
+
+| Problem | Fix |
+|---|---|
+| `could not create a venv` | Ubuntu/Debian: `sudo apt install python3-venv`, then `./setup.sh` again |
+| `claude not found` warning | Install Claude Code and run `claude` once to log in, or use an API key (step 3) |
+| Port 8000 or 5173 already in use | Stop the other app, or `lsof -i :8000` to find it |
+| The browser fails to start | `cd backend && .venv/bin/playwright install --with-deps chromium` |
+| Plan generation fails | Settings screen → check the AI provider; restart `./dev.sh` after editing `.env` |
+
+<details><summary>Manual setup (what <code>setup.sh</code> does)</summary>
 
 ```bash
 cd backend
@@ -13,6 +51,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 cp .env.example .env                          # then pick the AI provider (below)
 cd ../frontend && npm install
 ```
+</details>
 
 ### AI provider (`backend/.env`)
 
@@ -49,7 +88,7 @@ It has 3 planted bugs (details in `backend/app/demo.py`):
 ```bash
 cd backend
 .venv/bin/pip install -r requirements-dev.txt   # pytest + httpx
-.venv/bin/pytest                                # ~1 s, Claude is mocked, no browser needed
+.venv/bin/pytest                                # a few seconds, Claude is mocked, no browser needed
 ```
 
 Covers the evidence check (a `Passed` without text from the page becomes `Blocked`), input validation,
@@ -60,7 +99,7 @@ bug reports (failed tests only), the answer API and the run history DB.
 | Folder / file | What it is |
 |---|---|
 | `frontend/` | React + TypeScript UI (Vite). The screens the user clicks. |
-| `frontend/src/pages/` | One file per screen: `Dashboard`, `NewRun` (website URL or APK + requirements), `PlanReview` (edit/add/approve cases), `RunView` (live results, evidence, edit & re-run, export), `BugReport`, `History`, `Settings`. |
+| `frontend/src/pages/` | One file per screen: `Dashboard`, `NewRun` (website URL or APK + requirements), `PlanReview` (edit/add/approve cases), `RunView` (live results, evidence, edit & re-run, export), `BugReport`, `History`, `Settings`, `ComingSoon` (roadmap: iOS, hosted version, Figma compare, …). |
 | `frontend/src/components.tsx` | Shared UI: badges, case editor, toasts, Ctrl+K search, pass-rate bar. |
 | `frontend/src/icons.tsx` | Icons from `design.html`. |
 | `frontend/src/report.ts` | Markdown export of a run / bug report. |
