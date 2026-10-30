@@ -93,9 +93,16 @@ def _run_case(browser, run: Run, result: TestResult, out: Path, cfg: settings.Se
     try:
         page.goto(run.url, wait_until="domcontentloaded", timeout=30000)
         result.log.append(f"goto {page.url}")
+        last_view, clicked, dead_clicks = None, None, []
         for _ in range(MAX_ACTIONS):
             settle(page)
-            name, args = ai.next_action(result.case, page.url, result.log, snapshot(page), can_ask=cfg.ask_when_unsure)
+            view = (page.url, snapshot(page))
+            # A click that changes nothing is a step that never happened (e.g. a menu that never opens).
+            if clicked and view == last_view:
+                result.log.append(f"NO CHANGE: the page looks the same after {clicked}")
+                dead_clicks.append(clicked)
+            last_view, clicked = view, None
+            name, args = ai.next_action(result.case, page.url, result.log, view[1], can_ask=cfg.ask_when_unsure)
             if name == "ask_user":
                 def shot(fname: str) -> str | None:
                     page.screenshot(path=str(out / fname))
@@ -117,9 +124,14 @@ def _run_case(browser, run: Run, result: TestResult, out: Path, cfg: settings.Se
                 elif result.status == "Passed" and missing:
                     result.status = "Blocked"
                     result.reason = f"Needs review: AI said passed but {missing} is not on the page."
+                elif result.status == "Passed" and dead_clicks:
+                    result.status = "Blocked"
+                    result.reason = f"Needs review: AI said passed but the page did not change after {dead_clicks}."
                 break
             try:
                 result.log.append(_do(page, name, args, run.url))
+                if name == "click":
+                    clicked = result.log[-1]
             except Exception as e:  # tell the AI, let it try something else or fail the test
                 result.log.append(f"ERROR {name} {args}: {str(e).splitlines()[0]}")
         else:

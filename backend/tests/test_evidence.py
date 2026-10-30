@@ -22,13 +22,16 @@ class FakeLocator:
     def click(self, **kw):
         if self.page.click_error:
             raise RuntimeError(self.page.click_error + "\nmore detail")
+        if self.page.aria_after_click:
+            self.page.aria = self.page.aria_after_click
 
 
 class FakePage:
     """Just enough of a Playwright page for runner._run_case."""
 
-    def __init__(self, text=CART_TEXT, aria=CART_ARIA, goto_error=None, click_error=None):
+    def __init__(self, text=CART_TEXT, aria=CART_ARIA, goto_error=None, click_error=None, aria_after_click=None):
         self.text, self.aria, self.goto_error, self.click_error = text, aria, goto_error, click_error
+        self.aria_after_click = aria_after_click
         self.url = "about:blank"
 
     def on(self, event, handler):
@@ -180,3 +183,28 @@ def test_site_that_does_not_open_is_blocked(fake_ai):
     assert result.status == "Blocked"
     assert "ERR_CONNECTION_REFUSED" in result.reason
     assert fake_ai.calls == []
+
+
+# ---------- A click that changes nothing is a step that never happened ----------
+
+MENU_CLICK = ("click", {"role": "button", "name": "Menu"})
+
+
+def test_passed_after_click_that_changed_nothing_is_blocked(fake_ai):
+    result = run_case(fake_ai, MENU_CLICK, finish("Passed", ["1 item"]))
+    assert result.status == "Blocked"
+    assert "did not change" in result.reason and "Menu" in result.reason
+    assert "NO CHANGE" in fake_ai.calls[1]["prompt"]  # the AI is told before it decides
+
+
+def test_passed_after_click_that_changed_the_page_stays_passed(fake_ai):
+    page = FakePage(aria_after_click=CART_ARIA + '\n- link "Orders"')
+    result = run_case(fake_ai, MENU_CLICK, finish("Passed", ["1 item"]), page=page)
+    assert result.status == "Passed"
+    assert not any(line.startswith("NO CHANGE") for line in result.log)
+
+
+def test_failed_after_click_that_changed_nothing_stays_failed(fake_ai):
+    result = run_case(fake_ai, MENU_CLICK, finish("Failed", reason="menu did not open"))
+    assert result.status == "Failed"
+    assert result.reason == "menu did not open"

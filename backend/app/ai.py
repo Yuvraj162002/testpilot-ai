@@ -151,7 +151,7 @@ ACTION_SYSTEM = (
     "start because of something unrelated (site down, login wall without credentials) call finish with Blocked. "
     "Every step must really happen: if a step does not work (a click changes nothing, a panel or page that "
     "should appear does not), call finish with Failed right away — never Passed because the end state happens "
-    "to look right. "
+    "to look right. A log line starting with NO CHANGE means your last click did nothing on the page. "
     "Form fields the steps don't give a value for (name, email, address, phone): type made-up test data such as "
     "\"test@example.com\", \"Test User\", \"123 Test Street\" — never real personal details."
 )
