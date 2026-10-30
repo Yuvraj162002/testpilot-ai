@@ -3,36 +3,58 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AcmeCart – Checkout</title>
-  <link rel="stylesheet" href="/demo/style.css">
+  <link rel="stylesheet" href="/demo/style.css?v=2">
 </head>
 <body>
   <header></header>
   <main>
     <h1>Checkout</h1>
-    <div class="card" id="summary"></div>
-    <div class="card" style="margin-top:16px">
-      <label for="code">Discount code</label>
-      <div class="row"><input id="code" placeholder="e.g. SAVE10"><button class="primary" id="apply">Apply</button></div>
-      <label for="email">Email</label><input id="email" type="email">
-      <label for="name">Full name</label><input id="name">
-      <label for="address">Address</label><input id="address">
-      <div id="message" role="alert"></div>
-      <button class="primary" id="place-order" style="margin-top:16px">Place order</button>
+    <div class="checkout">
+      <div class="card">
+        <h2>Delivery details</h2>
+        <label for="code">Discount code</label>
+        <div class="row"><input id="code" placeholder="e.g. SAVE10"><button class="primary" id="apply">Apply</button></div>
+        <label for="email">Email</label><input id="email" type="email">
+        <label for="name">Full name</label><input id="name">
+        <label for="address">Address</label><input id="address">
+        <div id="message" role="alert"></div>
+        <button class="primary wide" id="place-order" style="margin-top:16px">Place order</button>
+      </div>
+      <div class="card" id="summary"></div>
     </div>
   </main>
-  <script src="/demo/shop.js"></script>
+  <script src="/demo/shop.js?v=2"></script>
   <script>
     let discount = null
+    const subtotal = () => cart.get().reduce((s, i) => s + product(i.id).price * i.qty, 0)
     function total() {
-      const sum = cart.get().reduce((s, i) => s + PRODUCTS.find(p => p.id === i.id).price * i.qty, 0)
+      const sum = subtotal()
       return discount ? sum * 0.9 : sum
     }
     function renderSummary() {
       const items = cart.get()
-      document.getElementById('summary').innerHTML = items.length
-        ? items.map(i => `<p>${PRODUCTS.find(p => p.id === i.id).name} × ${i.qty}</p>`).join('')
-          + (discount ? '<p>Discount SAVE10: −10%</p>' : '') + `<p><b>Total: $${total().toFixed(2)}</b></p>`
-        : '<p>Your cart is empty.</p>'
+      document.getElementById('summary').innerHTML = '<h2>Your cart</h2>' + (items.length
+        ? items.map(i => {
+            const p = product(i.id)
+            return `<div class="line">
+              <span class="thumb" style="background:linear-gradient(135deg,${p.bg})" aria-hidden="true">${p.icon}</span>
+              <div class="grow"><p>${p.name} × ${i.qty}</p><span class="muted">$${p.price} each</span></div>
+              <div class="qty">
+                <button data-dec="${i.id}" aria-label="Decrease quantity of ${p.name}">−</button>
+                <button data-inc="${i.id}" aria-label="Increase quantity of ${p.name}">+</button>
+                <button data-del="${i.id}" class="link" aria-label="Remove ${p.name}">Remove</button>
+              </div>
+            </div>`
+          }).join('')
+          + `<div class="totals"><p><span>Subtotal</span><span>$${subtotal().toFixed(2)}</span></p>`
+          + (discount ? '<p class="green"><span>Discount SAVE10: −10%</span><span>−$' + (subtotal() * 0.1).toFixed(2) + '</span></p>' : '')
+          + '<p><span>Shipping</span><span>Free</span></p>'
+          + `<p><b>Total: $${total().toFixed(2)}</b></p></div>`
+        : '<p class="muted">Your cart is empty.</p><a class="primary" href="/demo/">Continue shopping</a>')
+      const change = (id, d) => { const i = cart.get().find(x => x.id === id); cart.setQty(id, i.qty + d); updateCount(); renderSummary() }
+      document.querySelectorAll('[data-inc]').forEach(b => b.onclick = () => change(+b.dataset.inc, 1))
+      document.querySelectorAll('[data-dec]').forEach(b => b.onclick = () => change(+b.dataset.dec, -1))
+      document.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { cart.setQty(+b.dataset.del, 0); updateCount(); renderSummary() })
     }
     const show = (cls, text) => document.getElementById('message').innerHTML = `<div class="${cls}">${text}</div>`
 

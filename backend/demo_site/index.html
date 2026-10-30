@@ -3,31 +3,67 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AcmeCart – Shop</title>
-  <link rel="stylesheet" href="/demo/style.css">
+  <link rel="stylesheet" href="/demo/style.css?v=2">
 </head>
 <body>
   <header></header>
+  <section class="hero">
+    <div>
+      <span class="pill">Autumn drop · free shipping on every order</span>
+      <h2>Fresh styles for the new season</h2>
+      <p>Sneakers, jackets and everyday accessories. Use code <b>SAVE10</b> at checkout for 10% off.</p>
+    </div>
+    <div class="hero-art" aria-hidden="true">👟🧥🕶️</div>
+  </section>
   <main>
-    <h1>New arrivals</h1>
+    <div class="toolbar">
+      <h1>New arrivals</h1>
+      <input id="search" type="search" placeholder="Search products" aria-label="Search products">
+    </div>
+    <div class="chips" id="cats" role="group" aria-label="Category"></div>
     <div class="grid" id="products"></div>
+    <p class="empty hidden" id="no-results">No products match your search.</p>
     <div class="success hidden" id="added" role="status"></div>
   </main>
-  <script src="/demo/shop.js"></script>
+  <script src="/demo/shop.js?v=2"></script>
   <script>
-    document.getElementById('products').innerHTML = PRODUCTS.map(p => `
-      <div class="card">
-        <div class="img"></div>
-        <h3>${p.name}</h3>
-        <p>$${p.price}</p>
-        <button class="primary" data-id="${p.id}" aria-label="Add ${p.name} to cart">Add to cart</button>
-      </div>`).join('')
-    document.querySelectorAll('[data-id]').forEach(b => b.onclick = () => {
-      cart.add(+b.dataset.id)
-      document.getElementById('cart-count').textContent = cart.count()
-      const msg = document.getElementById('added')
-      msg.textContent = 'Added to cart'
-      msg.classList.remove('hidden')
-    })
+    let cat = 'All', query = ''
+    const cats = ['All', ...new Set(PRODUCTS.map(p => p.cat))]
+
+    function renderCats() {
+      document.getElementById('cats').innerHTML = cats.map(c =>
+        `<button class="chip ${c === cat ? 'on' : ''}" aria-pressed="${c === cat}" data-cat="${c}">${c}</button>`).join('')
+      document.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { cat = b.dataset.cat; renderCats(); renderProducts() })
+    }
+
+    function renderProducts() {
+      const list = PRODUCTS.filter(p => (cat === 'All' || p.cat === cat) && p.name.toLowerCase().includes(query))
+      document.getElementById('no-results').classList.toggle('hidden', list.length > 0)
+      document.getElementById('products').innerHTML = list.map(p => `
+        <div class="card product">
+          <div class="img" style="background:linear-gradient(135deg,${p.bg})"><span aria-hidden="true">${p.icon}</span>${p.tag ? `<em>${p.tag}</em>` : ''}</div>
+          <div class="meta">${p.cat}</div>
+          <h3>${p.name}</h3>
+          <div class="rating" aria-label="Rated ${p.rating} out of 5">${stars(p.rating)} <span>${p.rating}</span></div>
+          <div class="buy">
+            <p class="price">$${p.price}</p>
+            <button class="primary" data-id="${p.id}" aria-label="Add ${p.name} to cart">Add to cart</button>
+          </div>
+        </div>`).join('')
+      document.querySelectorAll('[data-id]').forEach(b => b.onclick = () => {
+        cart.add(+b.dataset.id)
+        updateCount()
+        const msg = document.getElementById('added')
+        msg.textContent = 'Added to cart'
+        msg.classList.remove('hidden', 'pop')
+        void msg.offsetWidth // restart the pop animation
+        msg.classList.add('pop')
+      })
+    }
+
+    document.getElementById('search').oninput = e => { query = e.target.value.trim().toLowerCase(); renderProducts() }
+    renderCats()
+    renderProducts()
   </script>
 </body>
 </html>

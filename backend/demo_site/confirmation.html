@@ -3,15 +3,20 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AcmeCart – Order confirmed</title>
-  <link rel="stylesheet" href="/demo/style.css">
+  <link rel="stylesheet" href="/demo/style.css?v=2">
 </head>
 <body>
   <header></header>
-  <main>
-    <h1>Thank you for your order!</h1>
-    <div class="success" id="order"></div>
+  <main class="center">
+    <div class="card done">
+      <div class="check" aria-hidden="true">✓</div>
+      <h1>Thank you for your order!</h1>
+      <div class="success" id="order"></div>
+      <p class="muted">We sent a confirmation email. Your order ships within 2 working days.</p>
+      <a class="primary" href="/demo/">Continue shopping</a>
+    </div>
   </main>
-  <script src="/demo/shop.js"></script>
+  <script src="/demo/shop.js?v=2"></script>
   <script>
     document.getElementById('order').textContent =
       'Order number: ' + new URLSearchParams(location.search).get('order')
