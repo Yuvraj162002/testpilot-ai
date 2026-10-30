@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { Target, TestCase } from './api'
-import { CommandPalette, Toasts } from './components'
+import { api, getApiKey, NEED_KEY, type Target, type TestCase } from './api'
+import { CommandPalette, KeyDialog, Toasts } from './components'
 import { Icon, type IconName } from './icons'
 import BugReport from './pages/BugReport'
 import Dashboard from './pages/Dashboard'
@@ -35,6 +35,8 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'dash' })
   const [mini, setMini] = useState(false)
   const [palette, setPalette] = useState(false)
+  const [needsKey, setNeedsKey] = useState(false) // public deploy: every tester brings their own key
+  const [keyDialog, setKeyDialog] = useState(false)
 
   const go = (s: Screen) => {
     setScreen(s)
@@ -52,6 +54,16 @@ export default function App() {
     return () => document.removeEventListener('keydown', onKey)
   }, [])
 
+  useEffect(() => {
+    api.health().then(h => {
+      setNeedsKey(h.needs_key)
+      if (h.needs_key && !getApiKey()) setKeyDialog(true)
+    }).catch(() => {})
+    const onNeedKey = () => setKeyDialog(true)
+    window.addEventListener(NEED_KEY, onNeedKey)
+    return () => window.removeEventListener(NEED_KEY, onNeedKey)
+  }, [])
+
   return (
     <div id="app" className={mini ? 'mini' : ''}>
       <aside>
@@ -67,6 +79,9 @@ export default function App() {
             <Icon name={icon} /><span className="tx">{label}</span>
           </button>
         ))}
+        <button className="nav" onClick={() => setKeyDialog(true)}>
+          <Icon name="key" /><span className="tx">{getApiKey() ? 'API key added' : 'Add API key'}</span>
+        </button>
         <button className="nav" style={{ marginTop: 8 }} onClick={() => setMini(!mini)}>
           <Icon name="panel" /><span className="tx">{mini ? 'Expand' : 'Collapse'}</span>
         </button>
@@ -89,6 +104,7 @@ export default function App() {
       </main>
       <Toasts />
       {palette && <CommandPalette go={go} close={() => setPalette(false)} />}
+      {keyDialog && <KeyDialog required={needsKey && !getApiKey()} close={() => setKeyDialog(false)} />}
     </div>
   )
 }

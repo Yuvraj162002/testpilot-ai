@@ -2,12 +2,14 @@
 from datetime import datetime
 from pathlib import Path
 
+import anthropic
 from dotenv import load_dotenv
 
 load_dotenv()  # ANTHROPIC_API_KEY, CLAUDE_MODEL from backend/.env — before importing ai
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException  # noqa: E402
+from fastapi import BackgroundTasks, FastAPI, Header, HTTPException  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
+from fastapi.responses import JSONResponse  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
 from . import ai, android, db, demo, questions, runner, settings  # noqa: E402
@@ -19,13 +21,29 @@ app.mount("/evidence", StaticFiles(directory=runner.EVIDENCE_DIR), name="evidenc
 demo.mount(app)  # demo shop at /demo
 
 
+def user_key(x_anthropic_key: str | None = Header(None)) -> str | None:
+    """The tester's own Anthropic key from the "API key" dialog. Used in memory only: never saved or logged."""
+    key = (x_anthropic_key or "").strip() or None
+    if key and (not key.startswith("sk-ant-") or len(key) > 300):
+        raise HTTPException(400, "That does not look like an Anthropic API key (sk-ant-…)")
+    if ai.REQUIRE_USER_KEY and not key:
+        raise HTTPException(401, "Add your Anthropic API key first")
+    return key
+
+
+@app.exception_handler(anthropic.AuthenticationError)
+def bad_key(request, exc):
+    return JSONResponse({"detail": "Anthropic rejected this API key — check it and add it again"}, status_code=401)
+
+
 @app.get("/api/health")
 def health():
-    return {"ok": True, "provider": ai.PROVIDER, "model": ai.MODEL}
+    return {"ok": True, "provider": ai.PROVIDER, "model": ai.MODEL, "needs_key": ai.REQUIRE_USER_KEY}
 
 
 @app.post("/api/plans", response_model=Plan)
-def create_plan(req: PlanRequest):
+def create_plan(req: PlanRequest, x_anthropic_key: str | None = Header(None)):
+    key = user_key(x_anthropic_key)
     try:
         if req.platform == "android":
             page = android.start_screen(req.url)
@@ -33,11 +51,13 @@ def create_plan(req: PlanRequest):
             page = runner.read_start_page(req.url, req.viewport)
     except Exception as e:
         raise HTTPException(400, f"Could not open {req.url}: {str(e).splitlines()[0]}")
-    return Plan(cases=ai.generate_plan(req.url, req.requirements, page, req.platform))
+    with ai.use_key(key):
+        return Plan(cases=ai.generate_plan(req.url, req.requirements, page, req.platform))
 
 
 @app.post("/api/runs", response_model=Run)
-def create_run(req: RunRequest, background: BackgroundTasks):
+def create_run(req: RunRequest, background: BackgroundTasks, x_anthropic_key: str | None = Header(None)):
+    key = user_key(x_anthropic_key)
     run = Run(
         id=db.new_run_id(),
         platform=req.platform,
@@ -51,9 +71,9 @@ def create_run(req: RunRequest, background: BackgroundTasks):
     db.save(run)
     # frontend polls GET /api/runs/{id}
     if run.platform == "android":
-        background.add_task(android.run_tests, run.id, runner.EVIDENCE_DIR)
+        background.add_task(android.run_tests, run.id, runner.EVIDENCE_DIR, key)
     else:
-        background.add_task(runner.run_tests, run.id)
+        background.add_task(runner.run_tests, run.id, key)
     return run
 
 
@@ -84,8 +104,10 @@ def get_run(run_id: int):
 
 
 @app.post("/api/runs/{run_id}/cases/{case_id}/bug")
-def create_bug_report(run_id: int, case_id: int, regenerate: bool = False):
+def create_bug_report(run_id: int, case_id: int, regenerate: bool = False,
+                      x_anthropic_key: str | None = Header(None)):
     """Writes (once) and saves the AI bug report for a failed test; regenerate=true writes a new one."""
+    key = user_key(x_anthropic_key)
     run = db.get(run_id)
     result = next((r for r in run.results if r.case.id == case_id), None) if run else None
     if not result or result.status != "Failed":
@@ -94,7 +116,8 @@ def create_bug_report(run_id: int, case_id: int, regenerate: bool = False):
         raise HTTPException(409, "Wait until the run has finished")
     if result.bug is None or regenerate:
         data = result.model_dump(exclude={"bug", "screenshot"})
-        result.bug = ai.bug_report(run.url, data)
+        with ai.use_key(key):
+            result.bug = ai.bug_report(run.url, data)
         db.save(run)
     return result.bug
 

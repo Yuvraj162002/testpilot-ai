@@ -202,7 +202,12 @@ def _serial() -> str:
     return found[0]
 
 
-def run_tests(run_id: int, evidence_dir: Path) -> None:
+def run_tests(run_id: int, evidence_dir: Path, api_key: str | None = None) -> None:
+    with ai.use_key(api_key):  # the tester's own key, in memory for this run only
+        _run_all(run_id, evidence_dir)
+
+
+def _run_all(run_id: int, evidence_dir: Path) -> None:
     run: Run = db.get(run_id)
     cfg = settings.load()
     out = evidence_dir / str(run_id)

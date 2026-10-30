@@ -149,8 +149,13 @@ def _run_case(browser, run: Run, result: TestResult, out: Path, cfg: settings.Se
     ctx.close()
 
 
-def run_tests(run_id: int) -> None:
+def run_tests(run_id: int, api_key: str | None = None) -> None:
     """Background job: executes every case of the run, saving progress after each one."""
+    with ai.use_key(api_key):  # the tester's own key, in memory for this run only
+        _run_all(run_id)
+
+
+def _run_all(run_id: int) -> None:
     run: Run = db.get(run_id)
     cfg = settings.load()
     out = EVIDENCE_DIR / str(run_id)

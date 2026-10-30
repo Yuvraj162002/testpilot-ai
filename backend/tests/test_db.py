@@ -55,7 +55,7 @@ def test_creates_missing_data_folder(tmp_path, monkeypatch):
 
 def test_api_create_get_and_list(api, monkeypatch):
     from app import runner
-    monkeypatch.setattr(runner, "run_tests", lambda run_id: None)  # no browser
+    monkeypatch.setattr(runner, "run_tests", lambda run_id, key=None: None)  # no browser
     body = {"url": "http://localhost:8000/demo/", "cases": [make_case().model_dump()]}
     created = api.post("/api/runs", json=body).json()
     assert created["status"] == "Running" and created["results"][0]["status"] == "Queued"

@@ -96,12 +96,22 @@ export interface RunSummary {
   blocked: number
 }
 
+// The tester's own Anthropic key. Kept only in this variable: never saved to storage, gone on reload.
+let apiKey = ''
+export const getApiKey = () => apiKey
+export function setApiKey(key: string) {
+  apiKey = key.trim()
+}
+// Fired when the backend wants a key (401), so App can open the key dialog.
+export const NEED_KEY = 'testpilot:need-key'
+
 async function call<T>(path: string, body?: unknown, method?: string): Promise<T> {
   const res = await fetch(path, {
     method: method ?? (body === undefined ? 'GET' : 'POST'),
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(apiKey ? { 'X-Anthropic-Key': apiKey } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
+  if (res.status === 401) window.dispatchEvent(new Event(NEED_KEY))
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     // FastAPI sends a string, or a list of validation errors ({ msg }) for 422
@@ -126,5 +136,5 @@ export const api = {
     call<{ ok: boolean }>(`/api/runs/${runId}/cases/${caseId}/answer`, { answer, skip }),
   settings: () => call<Settings>('/api/settings'),
   saveSettings: (s: Settings) => call<Settings>('/api/settings', s, 'PUT'),
-  health: () => call<{ ok: boolean; provider: string; model: string }>('/api/health'),
+  health: () => call<{ ok: boolean; provider: string; model: string; needs_key: boolean }>('/api/health'),
 }

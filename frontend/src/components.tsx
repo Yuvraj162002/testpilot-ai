@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { api, type Priority, type Question, type RunStatus, type RunSummary, type Status, type TestCase } from './api'
+import { api, getApiKey, setApiKey, type Priority, type Question, type RunStatus, type RunSummary, type Status, type TestCase } from './api'
 import type { Screen } from './App'
 import { Icon, type IconName } from './icons'
 
@@ -261,6 +261,55 @@ export function QuestionDialog({ runId, caseId, title, q, done }: {
           <div className="row" style={{ borderTop: '1px solid var(--line)', marginTop: 14, paddingTop: 12 }}>
             <span className="mut" style={{ fontSize: 12 }}>The test waits up to 15 minutes, then it is skipped.</span>
             <button className="btn s sp" disabled={busy} onClick={() => send('skip', true)}>Skip this test</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------- tester's own Anthropic API key ----------
+
+export function KeyDialog({ required, close }: { required: boolean; close: () => void }) {
+  const [key, setKey] = useState(getApiKey())
+  const [show, setShow] = useState(false)
+  const valid = key.trim().startsWith('sk-ant-')
+
+  function save() {
+    setApiKey(key)
+    toast('API key added for this tab')
+    close()
+  }
+
+  return (
+    <div id="cmd" className="on" style={{ paddingTop: '12vh' }}
+      onMouseDown={e => !required && e.target === e.currentTarget && close()}>
+      <div className="cp" style={{ width: 'min(520px,94vw)' }}>
+        <div className="cb">
+          <div className="row" style={{ marginBottom: 8, color: 'var(--prit)' }}>
+            <Icon name="key" size={16} /><span className="f6">Your Anthropic API key</span>
+          </div>
+          <div style={{ fontSize: 13, marginBottom: 12 }}>
+            TestPilot uses your own key to write plans, drive the browser and write bug reports. Usage is billed
+            to your Anthropic account.
+          </div>
+          <div className="row">
+            <div className="inp">
+              <input type={show ? 'text' : 'password'} value={key} placeholder="sk-ant-…" autoComplete="off" autoFocus
+                spellCheck={false} onChange={e => setKey(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && valid && save()} />
+            </div>
+            <button className="btn s" title={show ? 'Hide' : 'Show'} onClick={() => setShow(!show)}><Icon name="eye" size={16} /></button>
+          </div>
+          {key && !valid && <div className="err">An Anthropic key starts with sk-ant-</div>}
+          <div className="mut" style={{ fontSize: 12, marginTop: 10 }}>
+            Kept only in this browser tab&apos;s memory and sent with each request. Never saved on the server or in
+            the browser; reloading the page forgets it.
+          </div>
+          <div className="row" style={{ borderTop: '1px solid var(--line)', marginTop: 14, paddingTop: 12 }}>
+            {getApiKey() && <button className="btn s" onClick={() => { setApiKey(''); setKey(''); toast('API key removed') }}>Remove key</button>}
+            {!required && <button className="btn s sp" onClick={close}>Cancel</button>}
+            <button className={`btn p ${required ? 'sp' : ''}`} disabled={!valid} onClick={save}>Use this key</button>
           </div>
         </div>
       </div>

@@ -3,11 +3,14 @@
 Two providers (AI_PROVIDER in .env):
   claude-cli  the user's own Claude Code login via `claude -p` — no API key, no extra cost (default)
   api         Anthropic API with ANTHROPIC_API_KEY
+A tester's own key (the "API key" dialog) overrides both for that request or run; it is never stored.
 """
 import json
 import os
 import subprocess
 import tempfile
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 
 from .models import TestCase
@@ -15,11 +18,25 @@ from .questions import ASK_TOOL
 
 PROVIDER = os.getenv("AI_PROVIDER") or ("api" if os.getenv("ANTHROPIC_API_KEY") else "claude-cli")
 MODEL = os.getenv("CLAUDE_MODEL") or ("sonnet" if PROVIDER == "claude-cli" else "claude-sonnet-5-5")
+API_MODEL = MODEL if PROVIDER == "api" else "claude-sonnet-5-5"  # for a tester's own key
+# Public deploy: every request must bring the tester's own key, the server's login/key is never used.
+REQUIRE_USER_KEY = os.getenv("REQUIRE_USER_KEY") == "1"
 CLI_TIMEOUT_S = 180
 # Empty working dir outside the repo: `claude -p` also reads CLAUDE.md from parent folders, so a dir inside
 # the repo would feed our dev instructions to the test agent.
 CLI_CWD = Path(tempfile.gettempdir()) / "testpilot-claude-cli"
 _client = None
+_user_key: ContextVar[str | None] = ContextVar("user_key", default=None)
+
+
+@contextmanager
+def use_key(key: str | None):
+    """Claude calls inside this block use the tester's own key (kept in memory only)."""
+    token = _user_key.set(key)
+    try:
+        yield
+    finally:
+        _user_key.reset(token)
 
 
 def client():
@@ -51,7 +68,10 @@ def _cli(system: str, prompt: str, schema: dict | None = None) -> dict | str:
 
 def _tool_call(system: str, prompt: str, tools: list[dict], max_tokens: int = 4000) -> tuple[str, dict]:
     """Ask Claude and force it to answer through one of `tools`; returns (tool name, input)."""
-    if PROVIDER == "claude-cli":
+    user_key = _user_key.get()
+    if REQUIRE_USER_KEY and not user_key:
+        raise RuntimeError("Add your Anthropic API key first")
+    if PROVIDER == "claude-cli" and not user_key:
         if len(tools) == 1:
             return tools[0]["name"], _cli(system, prompt, tools[0]["input_schema"])
         menu = "\n".join(f"- {t['name']}: {t['description']} args: {json.dumps(t['input_schema']['properties'])}"
@@ -60,8 +80,14 @@ def _tool_call(system: str, prompt: str, tools: list[dict], max_tokens: int = 40
             "action": {"type": "string", "enum": [t["name"] for t in tools]}, "args": {"type": "object"}}}
         out = _cli(system, f"{prompt}\n\nAvailable actions (answer with action + args):\n{menu}", schema)
         return out["action"], out["args"]
-    msg = client().messages.create(
-        model=MODEL,
+    if user_key:
+        import anthropic
+
+        api, model = anthropic.Anthropic(api_key=user_key), API_MODEL
+    else:
+        api, model = client(), MODEL
+    msg = api.messages.create(
+        model=model,
         max_tokens=max_tokens,
         system=system,
         tools=tools,
