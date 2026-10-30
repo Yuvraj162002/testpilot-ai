@@ -204,7 +204,10 @@ def _serial() -> str:
 
 def run_tests(run_id: int, evidence_dir: Path, api_key: str | None = None) -> None:
     with ai.use_key(api_key):  # the tester's own key, in memory for this run only
-        _run_all(run_id, evidence_dir)
+        try:
+            _run_all(run_id, evidence_dir)
+        finally:
+            db.stop_unfinished(run_id, "Run stopped before this test finished.")
 
 
 def _run_all(run_id: int, evidence_dir: Path) -> None:

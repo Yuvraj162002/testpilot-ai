@@ -20,7 +20,7 @@ PROVIDER = os.getenv("AI_PROVIDER") or ("api" if os.getenv("ANTHROPIC_API_KEY") 
 MODEL = os.getenv("CLAUDE_MODEL") or ("sonnet" if PROVIDER == "claude-cli" else "claude-sonnet-5-5")
 API_MODEL = MODEL if PROVIDER == "api" else "claude-sonnet-5-5"  # for a tester's own key
 # Public deploy: every request must bring the tester's own key, the server's login/key is never used.
-REQUIRE_USER_KEY = os.getenv("REQUIRE_USER_KEY") == "1"
+REQUIRE_USER_KEY = os.getenv("REQUIRE_USER_KEY") == "1" or os.getenv("PUBLIC_MODE") == "1"
 CLI_TIMEOUT_S = 180
 # Empty working dir outside the repo: `claude -p` also reads CLAUDE.md from parent folders, so a dir inside
 # the repo would feed our dev instructions to the test agent.

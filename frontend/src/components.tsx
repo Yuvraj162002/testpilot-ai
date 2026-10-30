@@ -316,3 +316,44 @@ export function KeyDialog({ required, close }: { required: boolean; close: () =>
     </div>
   )
 }
+
+// ---------- hosted version: enter an access code ----------
+
+export function AccessScreen({ done }: { done: (label: string) => void }) {
+  const [code, setCode] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function enter() {
+    setBusy(true)
+    setError('')
+    try {
+      done((await api.login(code.trim())).label)
+    } catch (e) {
+      setError((e as Error).message)
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div className="card" style={{ width: 'min(440px,100%)' }}><div className="cb">
+        <div className="row" style={{ marginBottom: 10 }}>
+          <div className="logo" style={{ padding: 0 }}><div className="mk"><Icon name="rocket" /></div></div>
+          <span className="f6" style={{ fontSize: 18 }}>TestPilot AI</span>
+        </div>
+        <div style={{ fontSize: 13, marginBottom: 14 }}>
+          This hosted demo is invite-only. Enter the access code you were given.
+        </div>
+        <div className="row">
+          <div className="inp">
+            <input value={code} placeholder="tp-…" autoFocus autoComplete="off" spellCheck={false}
+              onChange={e => setCode(e.target.value)} onKeyDown={e => e.key === 'Enter' && code.trim() && enter()} />
+          </div>
+          <button className="btn p" disabled={busy || !code.trim()} onClick={enter}>Enter</button>
+        </div>
+        {error && <div className="err">{error}</div>}
+      </div></div>
+    </div>
+  )
+}

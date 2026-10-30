@@ -1,17 +1,21 @@
 """Runs approved test cases in a real Chromium browser and records what happened."""
+import os
+import threading
 import time
 from pathlib import Path
 from urllib.parse import urljoin
 
 from playwright.sync_api import Page, sync_playwright
 
-from . import ai, db, questions, settings
+from . import access, ai, db, questions, settings
 from .models import VIEWPORTS, Run, TestResult
 
-EVIDENCE_DIR = Path(__file__).resolve().parent.parent / "runs"
+EVIDENCE_DIR = Path(os.getenv("EVIDENCE_DIR") or Path(__file__).resolve().parent.parent / "runs")
 MAX_ACTIONS = 15  # per test case
 SNAPSHOT_CHARS = 12000
 ACTION_TIMEOUT_MS = 5000
+# Each browser needs ~300-500 MB: more runs than this wait their turn instead of crashing the server.
+_browsers = threading.BoundedSemaphore(int(os.getenv("MAX_BROWSERS", "2")))
 
 
 def _norm(text: str) -> str:
@@ -25,9 +29,9 @@ def _is_noise(text: str) -> bool:
 
 def _browser(p, headless: bool = True):
     try:
-        return p.chromium.launch(channel="chrome", headless=headless)
+        return p.chromium.launch(channel="chrome", headless=headless, **access.launch_options())
     except Exception:  # no Google Chrome -> Playwright's own Chromium
-        return p.chromium.launch(headless=headless)
+        return p.chromium.launch(headless=headless, **access.launch_options())
 
 
 def settle(page: Page) -> None:
@@ -49,13 +53,19 @@ def snapshot(page: Page) -> str:
 def read_start_page(url: str, viewport: str) -> str:
     """Accessibility snapshot of the start page, used to write a plan that fits the site."""
     w, h = VIEWPORTS[viewport]
-    with sync_playwright() as p:
-        browser = _browser(p)
-        page = browser.new_page(viewport={"width": w, "height": h})
-        page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        page.wait_for_timeout(1500)
-        text = snapshot(page)
-        browser.close()
+    if not _browsers.acquire(timeout=45):  # the tester is waiting on this request
+        raise RuntimeError("the server is busy with other test runs, try again in a minute")
+    try:
+        with sync_playwright() as p:
+            browser = _browser(p)
+            ctx = browser.new_context(viewport={"width": w, "height": h})
+            page = ctx.new_page()
+            page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            page.wait_for_timeout(1500)
+            text = snapshot(page)
+            browser.close()
+    finally:
+        _browsers.release()
     return text
 
 
@@ -152,7 +162,10 @@ def _run_case(browser, run: Run, result: TestResult, out: Path, cfg: settings.Se
 def run_tests(run_id: int, api_key: str | None = None) -> None:
     """Background job: executes every case of the run, saving progress after each one."""
     with ai.use_key(api_key):  # the tester's own key, in memory for this run only
-        _run_all(run_id)
+        try:
+            _run_all(run_id)
+        finally:
+            db.stop_unfinished(run_id, "Run stopped before this test finished.")
 
 
 def _run_all(run_id: int) -> None:
@@ -161,7 +174,7 @@ def _run_all(run_id: int) -> None:
     out = EVIDENCE_DIR / str(run_id)
     out.mkdir(parents=True, exist_ok=True)
 
-    with sync_playwright() as p:
+    with _browsers, sync_playwright() as p:
         browser = _browser(p)
         for result in run.results:
             result.status = "Running"

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { api, getApiKey, NEED_KEY, type Target, type TestCase } from './api'
-import { CommandPalette, KeyDialog, Toasts } from './components'
+import { api, getApiKey, NEED_ACCESS, NEED_KEY, type Target, type TestCase } from './api'
+import { AccessScreen, CommandPalette, KeyDialog, Toasts } from './components'
 import { Icon, type IconName } from './icons'
+import Admin from './pages/Admin'
 import BugReport from './pages/BugReport'
 import Dashboard from './pages/Dashboard'
 import History from './pages/History'
@@ -37,6 +38,9 @@ export default function App() {
   const [palette, setPalette] = useState(false)
   const [needsKey, setNeedsKey] = useState(false) // public deploy: every tester brings their own key
   const [keyDialog, setKeyDialog] = useState(false)
+  // Hosted version: null = still checking, '' = needs an access code, else the code's label.
+  const [access, setAccess] = useState<string | null>(null)
+  const [hosted, setHosted] = useState(false)
 
   const go = (s: Screen) => {
     setScreen(s)
@@ -55,14 +59,28 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    api.health().then(h => {
+    api.health().then(async h => {
       setNeedsKey(h.needs_key)
-      if (h.needs_key && !getApiKey()) setKeyDialog(true)
-    }).catch(() => {})
+      setHosted(h.public)
+      const label = h.public ? await api.me().then(m => m.label ?? '').catch(() => '') : 'local'
+      setAccess(label)
+      if (label && h.needs_key && !getApiKey()) setKeyDialog(true)
+    }).catch(() => setAccess('local'))
     const onNeedKey = () => setKeyDialog(true)
+    const onNeedAccess = () => setAccess('')
     window.addEventListener(NEED_KEY, onNeedKey)
-    return () => window.removeEventListener(NEED_KEY, onNeedKey)
+    window.addEventListener(NEED_ACCESS, onNeedAccess)
+    return () => {
+      window.removeEventListener(NEED_KEY, onNeedKey)
+      window.removeEventListener(NEED_ACCESS, onNeedAccess)
+    }
   }, [])
+
+  if (location.hash === '#admin') return <><Admin /><Toasts /></>
+  if (access === null) return null
+  if (access === '') {
+    return <AccessScreen done={label => { setAccess(label); if (needsKey && !getApiKey()) setKeyDialog(true) }} />
+  }
 
   return (
     <div id="app" className={mini ? 'mini' : ''}>
@@ -88,8 +106,11 @@ export default function App() {
         <div className="me">
           <div className="av">QA</div>
           <div className="tx">
-            <div className="f5" style={{ fontSize: 13 }}>QA workspace</div>
-            <div className="mut" style={{ fontSize: 12 }}>Runs on this computer</div>
+            <div className="f5" style={{ fontSize: 13 }}>{hosted ? access : 'QA workspace'}</div>
+            {hosted
+              ? <button className="btn s g" style={{ fontSize: 12, padding: 0, height: 'auto' }}
+                  onClick={() => api.logout().finally(() => setAccess(''))}>Sign out</button>
+              : <div className="mut" style={{ fontSize: 12 }}>Runs on this computer</div>}
           </div>
         </div>
       </aside>

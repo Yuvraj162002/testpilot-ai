@@ -32,6 +32,18 @@ def get(run_id: int) -> Run | None:
     return Run.model_validate_json(row[0]) if row and row[0] != "{}" else None
 
 
+def stop_unfinished(run_id: int, reason: str) -> None:
+    """A run that died (crash, restart) must not stay Running forever: block what never finished."""
+    run = get(run_id)
+    if not run or run.status != "Running":
+        return
+    for r in run.results:
+        if r.status in ("Queued", "Running"):
+            r.status, r.reason = "Blocked", reason
+    run.status = "Failed" if any(r.status == "Failed" for r in run.results) else "Needs review"
+    save(run)
+
+
 def all_runs() -> list[Run]:
     with _conn() as conn:
         rows = conn.execute("SELECT data FROM runs WHERE data != '{}' ORDER BY id DESC").fetchall()

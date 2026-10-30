@@ -102,13 +102,21 @@ export const getApiKey = () => apiKey
 export function setApiKey(key: string) {
   apiKey = key.trim()
 }
-// Fired when the backend wants a key (401), so App can open the key dialog.
+// Fired when the backend wants a key (401) or an access code (403 on the hosted version), so App can ask.
 export const NEED_KEY = 'testpilot:need-key'
+export const NEED_ACCESS = 'testpilot:need-access'
+const ACCESS_DETAIL = 'Enter your access code'
 
-async function call<T>(path: string, body?: unknown, method?: string): Promise<T> {
+export interface AccessCode {
+  code: string
+  label: string
+  created_at: string
+}
+
+async function call<T>(path: string, body?: unknown, method?: string, headers?: Record<string, string>): Promise<T> {
   const res = await fetch(path, {
     method: method ?? (body === undefined ? 'GET' : 'POST'),
-    headers: { 'Content-Type': 'application/json', ...(apiKey ? { 'X-Anthropic-Key': apiKey } : {}) },
+    headers: { 'Content-Type': 'application/json', ...(apiKey ? { 'X-Anthropic-Key': apiKey } : {}), ...headers },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
   if (res.status === 401) window.dispatchEvent(new Event(NEED_KEY))
@@ -118,6 +126,7 @@ async function call<T>(path: string, body?: unknown, method?: string): Promise<T
     const detail = typeof err.detail === 'string' ? err.detail
       : Array.isArray(err.detail) ? err.detail.map((d: { msg: string }) => d.msg.replace(/^Value error, /, '')).join('; ')
       : `Request failed (${res.status})`
+    if (res.status === 403 && detail === ACCESS_DETAIL) window.dispatchEvent(new Event(NEED_ACCESS))
     throw new Error(detail)
   }
   return res.json()
@@ -136,5 +145,14 @@ export const api = {
     call<{ ok: boolean }>(`/api/runs/${runId}/cases/${caseId}/answer`, { answer, skip }),
   settings: () => call<Settings>('/api/settings'),
   saveSettings: (s: Settings) => call<Settings>('/api/settings', s, 'PUT'),
-  health: () => call<{ ok: boolean; provider: string; model: string; needs_key: boolean }>('/api/health'),
+  health: () => call<{ ok: boolean; provider: string; model: string; needs_key: boolean; public: boolean }>('/api/health'),
+  // Hosted version only: the access code becomes an http-only cookie, so screenshots load too.
+  login: (code: string) => call<{ label: string }>('/api/login', { code }),
+  logout: () => call<{ ok: boolean }>('/api/logout', {}),
+  me: () => call<{ label: string | null }>('/api/me'),
+  codes: (password: string) => call<AccessCode[]>('/api/admin/codes', undefined, 'GET', { 'X-Admin-Password': password }),
+  newCode: (password: string, label: string) =>
+    call<AccessCode>('/api/admin/codes', { label }, 'POST', { 'X-Admin-Password': password }),
+  revokeCode: (password: string, code: string) =>
+    call<{ ok: boolean }>('/api/admin/codes/revoke', { code }, 'POST', { 'X-Admin-Password': password }),
 }

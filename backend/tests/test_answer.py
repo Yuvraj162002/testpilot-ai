@@ -41,7 +41,7 @@ def test_second_answer_is_409_and_does_not_overwrite(api):
 def test_not_waiting_is_409(api):
     run = make_run("Running", run_status="Running")  # no question
     assert api.post(url(run.id, 1), json={"answer": "x"}).status_code == 409
-    assert api.post(url(9999, 1), json={"answer": "x"}).status_code == 409
+    assert api.post(url(9999, 1), json={"answer": "x"}).status_code == 404
     assert api.post(url(run.id, 42), json={"answer": "x"}).status_code == 409
 
 

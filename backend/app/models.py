@@ -72,6 +72,7 @@ class Run(BaseModel):
     status: RunStatus
     created_at: str
     results: list[TestResult]
+    owner: str = ""  # public mode: hash of the access code that started it (access.owner_of)
 
 
 class RunSummary(BaseModel):

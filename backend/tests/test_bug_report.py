@@ -33,9 +33,9 @@ def test_non_failed_case_gets_no_report(api, fake_ai, status):
     assert fake_ai.calls == []
 
 
-def test_unknown_run_or_case_is_400(api, fake_ai):
+def test_unknown_run_is_404_unknown_case_is_400(api, fake_ai):
     run = make_run("Failed")
-    assert api.post(url(9999, 1)).status_code == 400
+    assert api.post(url(9999, 1)).status_code == 404
     assert api.post(url(run.id, 99)).status_code == 400
     assert fake_ai.calls == []
 
